@@ -1,4 +1,4 @@
-name: hearing-test
+name: HearingTest
 channels:
   - conda-forge
   - defaults

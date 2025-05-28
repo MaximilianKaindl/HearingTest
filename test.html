@@ -260,13 +260,13 @@
                 <div id="fileSection" class="hidden" style="margin: 15px 0;">
                     <input type="file" id="audioFile" accept="audio/*" onchange="handleAudioFile()">
                     <div id="fileInfo" class="hidden" style="background: rgba(0,255,0,0.1); padding: 10px; border-radius: 5px; margin: 10px 0;">
-                        File loaded successfully! Duration: <span id="fileDuration"></span>s
+                        File loaded successfully! Duration: <span id="fileDuration"></span>s (Original: <span id="fileOriginalRate"></span> Hz)
                     </div>
                     <div id="fileError" class="hidden" style="background: rgba(255,0,0,0.1); padding: 10px; border-radius: 5px; margin: 10px 0;">
                         Error loading file. Please try another.
                     </div>
                     <div id="fileRequirement" style="font-size: 0.9em; color: #ddd; margin: 5px 0;">
-                        Supported: MP3, WAV, OGG, M4A. A random <span id="requiredDuration">3</span>-second segment will be used for each question.
+                        Supported: MP3, WAV, OGG, M4A. A random <span id="requiredDuration">3</span>-second segment (resampled to 44100 Hz) will be used for each question.
                          (Minimum duration based on selection above).
                     </div>
                 </div>
@@ -302,7 +302,7 @@
              <div id="exampleSection" class="example-section">
                  <div class="info-box">
                      <h3>Hear Filter Examples:</h3>
-                     <p>Select a filter type and, if applicable, a frequency to hear what the filtered audio sounds like.</p>
+                     <p>Select a filter type and, if applicable, a frequency to hear what the filtered audio sounds like, compared to the original audio.</p>
 
                      <div id="exampleFilterTypeSection">
                          <h4>Filter Type:</h4>
@@ -327,7 +327,9 @@
                      </div>
 
                      <div style="text-align: center; margin-top: 20px;">
-                         <button id="playExampleButton" class="play-button" disabled>▶️ Play Example</button>
+                         <!-- Added Play Original Button -->
+                         <button id="playExampleOriginalButton" class="play-button" disabled>▶️ Play Original</button>
+                         <button id="playExampleFilteredButton" class="play-button" disabled>▶️ Play Filtered</button>
                          <div id="exampleLoading" style="text-align:center; margin-top:10px; color: #ddd;"></div>
                          <div id="exampleError" style="text-align:center; margin-top:10px; color: #f44336;"></div>
                      </div>
@@ -438,6 +440,7 @@
         let selectedFrequency = null;
         let showTypeAnswers = false;
         let showDetails = false;
+        // Store the RESAMPLED audio buffer at FS
         let customAudioBuffer = null;
         let useCustomAudio = false;
         let useFixedFilter = false;
@@ -450,10 +453,11 @@
         // --- Example Player Variables ---
         let exampleSelectedFilterType = null;
         let exampleSelectedFrequency = null;
+        let exampleOriginalAudioData = null; // Store the generated original audio for the example
 
 
         // Constants matching the Python version
-        const FS = 44100;
+        const FS = 44100; // Standard Sample Rate
         const NOISE_AMPLITUDE = 0.4;
         const NUM_QUESTIONS = 10;
 
@@ -464,7 +468,7 @@
         const PEAK_EQ_GAIN_DB = 9.0;
         const PEAK_EQ_BW_OCT = 1.6;
 
-        // --- Updated Frequency Ranges ---
+        // --- Frequency Ranges ---
         const NOTCH_BAND_CHOICES = {
             100: "Low",
             600: "MidLow",
@@ -532,16 +536,18 @@
         }
 
         // Apply filter using OfflineAudioContext
+        // This function now assumes audioData is ALREADY at FS rate
         async function applyFilter(audioData, filterType, frequency, duration) {
             if (!audioContext) {
                  audioContext = new (window.AudioContext || window.webkitAudioContext)();
              }
 
-            // Create an offline context
-            const numberOfChannels = 1; // Assuming mono for simplicity
-            const bufferLength = Math.floor(duration * FS); // Use duration for length
-             // Ensure the audioData is at least bufferLength long before slicing
-             const dataToUse = audioData.length >= bufferLength ? audioData.slice(0, bufferLength) : audioData;
+            // Create an offline context running at FS
+            const numberOfChannels = 1; // Assuming mono
+            const bufferLength = Math.floor(duration * FS);
+             // Ensure the audioData is exactly bufferLength long
+             const dataToUse = new Float32Array(bufferLength);
+             dataToUse.set(audioData.slice(0, bufferLength)); // Copy data, padding with zeros if audioData was shorter
 
 
             const offlineContext = new OfflineAudioContext(numberOfChannels, bufferLength, FS);
@@ -549,8 +555,7 @@
             // Create source from audio data
             const source = offlineContext.createBufferSource();
             const audioBuffer = offlineContext.createBuffer(numberOfChannels, bufferLength, FS);
-            // Set channel data, slice to duration if data was longer, or pad if shorter
-            audioBuffer.getChannelData(0).set(new Float32Array(dataToUse)); // Use dataToUse
+            audioBuffer.getChannelData(0).set(dataToUse); // Set channel data
 
             source.buffer = audioBuffer;
 
@@ -595,7 +600,7 @@
             // Render the audio
             try {
                  const renderedBuffer = await offlineContext.startRendering();
-                 return renderedBuffer; // This is an AudioBuffer object
+                 return renderedBuffer; // This is an AudioBuffer object at FS
              } catch (e) {
                  console.error("Rendering failed:", e);
                  return audioBuffer; // Return original on error
@@ -603,6 +608,7 @@
         }
 
          // Play an AudioBuffer object - Modified to handle stopping previous audio
+         // This function now assumes the input audioBuffer is ALREADY at audioContext.sampleRate (which is FS)
          async function playAudioBuffer(audioBuffer) {
              if (!audioContext) {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -616,18 +622,18 @@
             if (currentSourceNode && currentSourceNode.context.state === 'running') {
                 try {
                     currentSourceNode.stop();
-                    console.log("Stopped previous audio source."); // Debugging
+                    // console.log("Stopped previous audio source."); // Debugging
                 } catch (e) {
                     // This might throw if the node already finished or was stopped by other means
-                    console.warn("Error trying to stop previous audio source:", e);
+                    // console.warn("Error trying to stop previous audio source:", e);
                 }
-                 // Do NOT nullify currentSourceNode here immediately.
-                 // The onended handler of the *new* source will clear it if it's still the current one.
             }
+             // Do NOT nullify currentSourceNode here immediately.
+             // The onended handler of the *new* source will clear it if it's still the current one.
 
 
             const source = audioContext.createBufferSource();
-            source.buffer = audioBuffer;
+            source.buffer = audioBuffer; // Use the provided AudioBuffer
             source.connect(audioContext.destination);
 
             // Set the new source as the current one
@@ -644,7 +650,7 @@
                     }
                     resolve();
                 }
-                 // Add error handling for the source node itself (e.g. decoding error, though offline context handles most of that)
+                 // Add error handling for the source node itself
                  source.onerror = (e) => {
                      console.error("Audio source node error:", e);
                      if (currentSourceNode === source) {
@@ -703,19 +709,21 @@
             }
 
             // Generate or use custom audio
-            let originalAudioData; // This will be a Float32Array
-            const numSamples = Math.floor(userDuration * FS); // Use userDuration
+            // The output will be a Float32Array at FS rate
+            let originalAudioData;
+            const numSamples = Math.floor(userDuration * FS);
 
             if (useCustomAudio && customAudioBuffer) {
-                // Extract a random segment from the custom audio buffer
+                // Extract a random segment from the RESAMPLED custom audio buffer
                 const maxStartSample = Math.max(0, customAudioBuffer.length - numSamples);
                 const startSample = Math.floor(Math.random() * (maxStartSample + 1));
                 // Ensure we don't try to slice past the end of the buffer
                 const endSample = Math.min(startSample + numSamples, customAudioBuffer.length);
 
+                // Get data from the RESAMPLED buffer's channel
                 originalAudioData = customAudioBuffer.getChannelData(0).slice(startSample, endSample);
 
-                // If the slice is shorter than userDuration (e.g., end of file), pad with silence
+                // If the slice is shorter than userDuration (e.g., end of resampled file), pad with silence
                  if (originalAudioData.length < numSamples) {
                      const paddedData = new Float32Array(numSamples);
                      paddedData.set(originalAudioData);
@@ -725,7 +733,7 @@
 
 
             } else {
-                // Generate pink noise for userDuration
+                // Generate pink noise for userDuration at FS
                 originalAudioData = generatePinkNoise(userDuration, FS);
             }
 
@@ -734,8 +742,8 @@
                 frequency, // The actual characteristic frequency
                 label, // The friendly label for the frequency (e.g., "Mid")
                 details, // Full filter details string
-                originalAudio: originalAudioData, // Float32Array data
-                filteredAudio: null // AudioBuffer object, generated asynchronously in loadQuestion
+                originalAudio: originalAudioData, // Float32Array data at FS
+                filteredAudio: null // AudioBuffer object at FS, generated asynchronously in loadQuestion
             };
         }
 
@@ -778,8 +786,9 @@
             }
 
             // Validate custom audio if selected
+            // customAudioBuffer is now guaranteed to be at FS if loaded successfully
             if (useCustomAudio && (!customAudioBuffer || customAudioBuffer.length < requiredSamples)) {
-                alert(`Please upload an audio file that is at least ${userDuration} seconds long.`);
+                alert(`Please upload an audio file that is at least ${userDuration} seconds long (after resampling).`);
                 return;
             }
 
@@ -866,7 +875,7 @@
 
             try {
                 // Generate filtered audio asynchronously
-                // Pass userDuration to applyFilter
+                // question.originalAudio is already a Float32Array at FS rate
                 question.filteredAudio = await applyFilter(question.originalAudio, question.filterType, question.frequency, userDuration);
 
                 // Audio is ready, *re-enable* play buttons
@@ -911,16 +920,16 @@
              }
 
             const question = questions[currentQuestion];
-            // playAudioBuffer expects an AudioBuffer, originalAudio is Float32Array
-            // Need to create a temporary AudioBuffer of the correct duration
+            // question.originalAudio is already a Float32Array at FS rate
+            // Need to create a temporary AudioBuffer of the correct duration (should match originalAudio length)
             if (!audioContext) {
                  audioContext = new (window.AudioContext || window.webkitAudioContext)();
              }
-             const numSamples = Math.floor(userDuration * FS);
-            const tempBuffer = audioContext.createBuffer(1, numSamples, FS);
-            // Copy only the required number of samples
-            tempBuffer.getChannelData(0).set(question.originalAudio.slice(0, numSamples));
-            await playAudioBuffer(tempBuffer);
+             // Create buffer with the exact length of the originalAudioData segment
+             const tempBuffer = audioContext.createBuffer(1, question.originalAudio.length, FS);
+             // Copy the data
+            tempBuffer.getChannelData(0).set(question.originalAudio);
+            await playAudioBuffer(tempBuffer); // playAudioBuffer expects AudioBuffer at FS
         }
 
         async function playFiltered() {
@@ -935,7 +944,7 @@
              }
 
             const question = questions[currentQuestion];
-            // filteredAudio is already an AudioBuffer from applyFilter
+            // question.filteredAudio is already an AudioBuffer at FS from applyFilter
             if (question.filteredAudio) {
                  await playAudioBuffer(question.filteredAudio);
             } else {
@@ -1147,9 +1156,50 @@
 
         // --- Example Player Logic ---
 
+         // Function to get the original audio data (Float32Array) for the currently selected duration and source
+         // This data is always returned at the standard FS rate (44100 Hz)
+         function getExampleOriginalAudioData(duration) {
+             const numSamples = Math.floor(duration * FS);
+             let originalData;
+             const isFileSource = document.querySelector('input[name="audioSource"]:checked').value === 'file';
+
+             if (isFileSource && customAudioBuffer) {
+                 // customAudioBuffer is already resampled to FS
+                 if (customAudioBuffer.length < numSamples) {
+                     document.getElementById('exampleError').textContent = `Uploaded file is too short for ${duration}s duration (after resampling).`;
+                     return null; // Indicate failure
+                 }
+                 const maxStartSample = Math.max(0, customAudioBuffer.length - numSamples);
+                 const startSample = Math.floor(Math.random() * (maxStartSample + 1));
+                 const endSample = Math.min(startSample + numSamples, customAudioBuffer.length);
+
+                 // Get data from the RESAMPLED buffer's channel
+                 originalData = customAudioBuffer.getChannelData(0).slice(startSample, endSample);
+
+                  // Pad if necessary (shouldn't be needed if length check passes, but safety)
+                  if (originalData.length < numSamples) {
+                       const paddedData = new Float32Array(numSamples);
+                       paddedData.set(originalData);
+                       originalData = paddedData;
+                  }
+
+             } else if (!isFileSource) {
+                 // Generate pink noise for duration at FS
+                 originalData = generatePinkNoise(duration, FS);
+             } else {
+                  // File source selected but no file loaded
+                  document.getElementById('exampleError').textContent = 'Please upload an audio file first.';
+                  return null; // Indicate failure
+             }
+             document.getElementById('exampleError').textContent = ''; // Clear error if successful
+             return originalData; // Float32Array at FS
+         }
+
+
         function selectExampleFilterType(type) {
              exampleSelectedFilterType = type;
              exampleSelectedFrequency = null; // Reset frequency when type changes
+             exampleOriginalAudioData = null; // Clear generated audio when type changes
 
              // Update button styles
              document.querySelectorAll('.example-filter-options button').forEach(btn => {
@@ -1163,12 +1213,13 @@
              // Show/hide frequency options based on type
              if (type === 'Notch' || type === 'Bandpass') {
                  document.getElementById('exampleFrequencySection').classList.remove('hidden');
-                 // Disable play button until frequency is selected
-                 document.getElementById('playExampleButton').disabled = true;
+                 // Disable play buttons until frequency is selected
+                 updateExamplePlayButtonState();
              } else { // Lowpass or Highpass
                  document.getElementById('exampleFrequencySection').classList.add('hidden');
-                 // Enable play button as type is enough
-                 updateExamplePlayButtonState(); // Use helper to check audio source readiness too
+                 // Frequency is not needed, prepare audio immediately if source is ready
+                 prepareExampleAudio(); // Attempt to generate original audio data
+                 updateExamplePlayButtonState(); // Update state (should enable if audio prepared)
              }
              document.getElementById('exampleError').textContent = ''; // Clear previous error
              document.getElementById('exampleLoading').textContent = ''; // Clear previous loading
@@ -1177,6 +1228,8 @@
 
         function selectExampleFrequency(freq) {
              exampleSelectedFrequency = freq;
+             exampleOriginalAudioData = null; // Clear generated audio when frequency changes
+
 
              // Update button styles
              document.querySelectorAll('.example-freq-options button').forEach(btn => {
@@ -1186,17 +1239,50 @@
                  }
              });
 
-             // Enable play button now that both type and frequency are selected
-             updateExamplePlayButtonState(); // Use helper to check audio source readiness too
+             // Frequency is selected, prepare audio data
+             prepareExampleAudio(); // Attempt to generate original audio data
+             updateExamplePlayButtonState(); // Update state (should enable now)
+
              document.getElementById('exampleError').textContent = ''; // Clear previous error
              document.getElementById('exampleLoading').textContent = ''; // Clear previous loading
 
         }
 
-        async function playExample() {
+         // Function to generate the original audio data (Float32Array at FS) for the currently selected example settings
+         function prepareExampleAudio() {
+             const duration = userDuration;
+             const isFileSource = document.querySelector('input[name="audioSource"]:checked').value === 'file';
+             const requiredSamples = Math.floor(duration * FS);
+
+             // Check if conditions are met to generate original audio data
+             let canGenerate = false;
+             if (!isFileSource) { // Pink noise is always available
+                 canGenerate = true;
+             } else { // File source requires RESAMPLED buffer to be loaded and long enough
+                 if (customAudioBuffer && customAudioBuffer.length >= requiredSamples) {
+                     canGenerate = true;
+                 }
+             }
+
+             if (canGenerate) {
+                 // Call getExampleOriginalAudioData which returns data at FS or null on error
+                 exampleOriginalAudioData = getExampleOriginalAudioData(duration);
+                 if (!exampleOriginalAudioData) {
+                      console.warn("Failed to prepare example original audio data.");
+                      // getExampleOriginalAudioData already set #exampleError
+                 }
+             } else {
+                 exampleOriginalAudioData = null; // Cannot generate original audio data yet
+                 // getExampleOriginalAudioData would have shown the error if file source
+             }
+         }
+
+
+        async function playExampleFiltered() { // Renamed for clarity
             const type = exampleSelectedFilterType;
             const freq = exampleSelectedFrequency;
             const duration = userDuration; // Use the currently selected quiz duration
+
 
              if (!type) {
                  console.warn("No example filter type selected.");
@@ -1208,93 +1294,113 @@
                  document.getElementById('exampleError').textContent = 'Please select a center frequency.';
                  return;
              }
-
-             // --- Determine Audio Source ---
-             let originalAudioData;
-             const numSamples = Math.floor(duration * FS);
-             const audioSourceText = document.querySelector('input[name="audioSource"]:checked').value === 'file' ? 'Uploaded File' : 'Pink Noise';
-
-             document.getElementById('exampleError').textContent = ''; // Clear previous error
-
-             if (audioSourceText === 'Uploaded File' && customAudioBuffer) {
-                  // Use a segment of the custom audio buffer
-                  if (customAudioBuffer.length < numSamples) {
-                       document.getElementById('exampleError').textContent = `Uploaded file is too short for ${duration}s duration.`;
-                       return;
-                  }
-                  const maxStartSample = Math.max(0, customAudioBuffer.length - numSamples);
-                  const startSample = Math.floor(Math.random() * (maxStartSample + 1));
-                  const endSample = startSample + numSamples;
-                  originalAudioData = customAudioBuffer.getChannelData(0).slice(startSample, endSample);
-
-                   // Pad if necessary (shouldn't be needed if length check passes, but safety)
-                   if (originalAudioData.length < numSamples) {
-                        const paddedData = new Float32Array(numSamples);
-                        paddedData.set(originalAudioData);
-                        originalAudioData = paddedData;
-                   }
-
-             } else if (audioSourceText === 'Pink Noise') {
-                 originalAudioData = generatePinkNoise(duration, FS);
-             } else {
-                 document.getElementById('exampleError').textContent = 'Please upload an audio file first.';
-                 return;
+             if (!exampleOriginalAudioData) {
+                  console.warn("Example original audio data not prepared or is null.");
+                  // This case should ideally be prevented by button state, but defensive check
+                   document.getElementById('exampleError').textContent = 'Audio source data not ready.';
+                   return;
              }
 
 
              // --- Apply and Play ---
-             document.getElementById('playExampleButton').disabled = true;
-             document.getElementById('exampleLoading').textContent = 'Generating audio...';
+             // Disable only the filtered play button during rendering, original is still playable
+             document.getElementById('playExampleFilteredButton').disabled = true;
+             document.getElementById('exampleLoading').textContent = 'Generating filtered audio...';
+             document.getElementById('exampleError').textContent = ''; // Clear errors
+
 
             try {
-                 const filteredAudioBuffer = await applyFilter(originalAudioData, type, freq || (type === 'Lowpass' ? LOWPASS_FREQ : HIGHPASS_FREQ), duration); // Use default LP/HP freq if freq is null
+                 // Use the pre-generated exampleOriginalAudioData (Float32Array at FS)
+                 // applyFilter will return an AudioBuffer at FS
+                 const filteredAudioBuffer = await applyFilter(exampleOriginalAudioData, type, freq || (type === 'Lowpass' ? LOWPASS_FREQ : HIGHPASS_FREQ), duration); // Use default LP/HP freq if freq is null
 
-                 document.getElementById('exampleLoading').textContent = 'Playing...'; // Update status
-                 await playAudioBuffer(filteredAudioBuffer);
+                 document.getElementById('exampleLoading').textContent = 'Playing filtered...'; // Update status
+                 await playAudioBuffer(filteredAudioBuffer); // playAudioBuffer expects AudioBuffer at FS
 
                  document.getElementById('exampleLoading').textContent = 'Done.'; // Final status
                  setTimeout(() => { document.getElementById('exampleLoading').textContent = ''; }, 1000); // Clear after 1 sec
 
 
              } catch (e) {
-                 console.error("Error playing example:", e);
-                 document.getElementById('exampleError').textContent = 'Error playing audio.';
+                 console.error("Error playing example filtered:", e);
+                 document.getElementById('exampleError').textContent = 'Error playing filtered audio.';
                  document.getElementById('exampleLoading').textContent = '';
 
              } finally {
-                  // Re-enable button using the state check
+                  // Re-enable filtered button using the state check
                   updateExamplePlayButtonState();
              }
         }
 
+         // New function to play the original example audio
+         async function playExampleOriginal() {
+              if (!exampleOriginalAudioData) {
+                   console.warn("Example original audio data not prepared or is null.");
+                   document.getElementById('exampleError').textContent = 'Audio source data not ready.';
+                   return;
+              }
+
+              const duration = userDuration;
+              const numSamples = Math.floor(duration * FS);
+
+             if (!audioContext) {
+                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
+             }
+              // Create a temporary buffer from the prepared data (Float32Array at FS)
+              const tempBuffer = audioContext.createBuffer(1, numSamples, FS);
+              tempBuffer.getChannelData(0).set(exampleOriginalAudioData.slice(0, numSamples)); // Ensure correct length
+
+
+              document.getElementById('exampleLoading').textContent = 'Playing original...'; // Update status
+              document.getElementById('exampleError').textContent = ''; // Clear errors
+
+              try {
+                  // playAudioBuffer expects AudioBuffer at FS
+                  await playAudioBuffer(tempBuffer);
+                   document.getElementById('exampleLoading').textContent = 'Done.'; // Final status
+                   setTimeout(() => { document.getElementById('exampleLoading').textContent = ''; }, 1000); // Clear after 1 sec
+              } catch (e) {
+                   console.error("Error playing example original:", e);
+                   document.getElementById('exampleError').textContent = 'Error playing original audio.';
+                   document.getElementById('exampleLoading').textContent = '';
+              } finally {
+                  // Buttons should remain enabled after playing original, unless source isn't ready
+                   updateExamplePlayButtonState();
+              }
+
+         }
+
+
          // Helper function to update the example play button disabled state
          function updateExamplePlayButtonState() {
-             const playButton = document.getElementById('playExampleButton');
+             const playFilteredButton = document.getElementById('playExampleFilteredButton'); // Renamed
+             const playOriginalButton = document.getElementById('playExampleOriginalButton');
+
              const selectedDuration = parseFloat(document.getElementById('sampleDuration').value);
              const requiredSamples = Math.floor(selectedDuration * FS);
              const isFileSource = document.querySelector('input[name="audioSource"]:checked').value === 'file';
 
-             let canPlay = false;
-             // Must have a type selected
+             let canPlayFiltered = false;
+             // Filtered requires a type and frequency (if Notch/BP) AND prepared original audio data
              if (exampleSelectedFilterType !== null) {
-                 // If Notch or Bandpass, must also have a frequency selected
                  if (exampleSelectedFilterType === 'Notch' || exampleSelectedFilterType === 'Bandpass') {
-                     if (exampleSelectedFrequency !== null) {
-                          canPlay = true;
+                     if (exampleSelectedFrequency !== null && exampleOriginalAudioData !== null) {
+                          canPlayFiltered = true;
                      }
-                 } else { // Lowpass or Highpass only requires type
-                     canPlay = true;
+                 } else { // Lowpass or Highpass only requires type AND prepared original audio data
+                     if (exampleOriginalAudioData !== null) {
+                         canPlayFiltered = true;
+                     }
                  }
              }
 
-             // If using a file source, also need a loaded audio buffer that is long enough
-             if (canPlay && isFileSource) {
-                 if (!customAudioBuffer || customAudioBuffer.length < requiredSamples) {
-                      canPlay = false;
-                 }
-             }
+             // Original button only requires the original audio data to be prepared/available
+             const canPlayOriginal = exampleOriginalAudioData !== null;
 
-             playButton.disabled = !canPlay;
+
+             playFilteredButton.disabled = !canPlayFiltered;
+             playOriginalButton.disabled = !canPlayOriginal;
+
 
              // Update example info text
              document.getElementById('exampleAudioSource').textContent = isFileSource ? (customAudioBuffer ? 'Uploaded File' : 'Uploaded File (Not loaded)') : 'Pink Noise';
@@ -1313,20 +1419,24 @@
              // Re-validate file length if custom audio is selected
               if (document.querySelector('input[name="audioSource"]:checked').value === 'file') {
                   const fileInput = document.getElementById('audioFile');
-                  if (fileInput.files.length > 0) {
-                      handleAudioFile(); // Re-run validation
+                  // Only re-handle file if one is already selected
+                  if (fileInput.files && fileInput.files.length > 0) {
+                      handleAudioFile(); // Re-run validation (will also trigger prepare/update example state)
                   } else {
-                      // No file selected, just update button state based on duration
+                       // File source selected, but no file uploaded - just update start button state
                        const requiredSamples = Math.floor(selectedDuration * FS);
                        document.getElementById('startButton').disabled = (!customAudioBuffer || customAudioBuffer.length < requiredSamples);
+                       // Update example audio state based on new duration (will likely set original data to null)
+                       prepareExampleAudio();
+                       updateExamplePlayButtonState(); // Update example button state based on duration change
                   }
               } else {
-                  // If not file mode, ensure button is enabled
+                  // If not file mode, ensure start button is enabled
                   document.getElementById('startButton').disabled = false;
+                  // Update example audio state based on new duration (pink noise is always available)
+                  prepareExampleAudio();
+                  updateExamplePlayButtonState();
               }
-
-              updateExamplePlayButtonState(); // Update example button state based on new duration/file status
-
          });
 
 
@@ -1345,6 +1455,8 @@
                  document.getElementById('fileError').classList.add('hidden');
                 document.getElementById('startButton').disabled = false; // Enable for pink noise
             }
+             // Update example audio state based on new source type
+             prepareExampleAudio(); // Attempt to regenerate original audio data
              updateExamplePlayButtonState(); // Update example button state based on new source type
              document.getElementById('exampleAudioSource').textContent = useCustomAudio ? (customAudioBuffer ? 'Uploaded File' : 'Uploaded File (Not loaded)') : 'Pink Noise';
 
@@ -1366,14 +1478,18 @@
             customAudioBuffer = null; // Clear previous buffer
             startButton.disabled = true; // Disable while processing
 
-             updateExamplePlayButtonState(); // Update example button state (will be disabled during loading)
+             // Update example button state (will be disabled during loading)
+             exampleOriginalAudioData = null; // Clear previous example audio data too
+             updateExamplePlayButtonState();
              document.getElementById('exampleAudioSource').textContent = 'Uploaded File (Loading...)';
+             document.getElementById('exampleLoading').textContent = 'Decoding...'; // Indicate decoding is happening
              document.getElementById('exampleError').textContent = '';
 
 
             if (!file) {
                  updateExamplePlayButtonState(); // Will remain disabled if no file
                  document.getElementById('exampleAudioSource').textContent = 'Uploaded File (No file)';
+                 document.getElementById('exampleLoading').textContent = ''; // Clear loading text
                 return; // No file selected, button remains disabled
             }
 
@@ -1386,30 +1502,72 @@
             reader.onload = async (e) => {
                 try {
                     // Decode audio data asynchronously
-                    const audioBuffer = await audioContext.decodeAudioData(e.target.result);
-                    customAudioBuffer = audioBuffer;
+                    const originalBuffer = await audioContext.decodeAudioData(e.target.result);
 
+                    // --- Resample to FS ---
+                    // Create an offline context with the target sample rate (FS)
+                    const numberOfChannels = originalBuffer.numberOfChannels; // Use original channels, though we only use mono data later
+                    const durationInSeconds = originalBuffer.duration;
+                    // Calculate length needed at the target rate
+                    const resampledLength = Math.floor(durationInSeconds * FS);
+
+                     // Use the same context's sampleRate for offline context creation if possible, though FS is fixed
+                     const offlineContext = new OfflineAudioContext(numberOfChannels, resampledLength, FS);
+
+
+                    const source = offlineContext.createBufferSource();
+                    source.buffer = originalBuffer; // Use the original decoded buffer
+
+                    source.connect(offlineContext.destination);
+                    source.start();
+
+                    document.getElementById('exampleLoading').textContent = 'Resampling...'; // Update status
+
+                    const resampledBuffer = await offlineContext.startRendering();
+
+                    // --- Store the resampled buffer ---
+                    // We only need mono for this quiz, so take the first channel if multi-channel
+                    if (resampledBuffer.numberOfChannels > 1) {
+                         const monoBuffer = audioContext.createBuffer(1, resampledBuffer.length, FS);
+                         monoBuffer.getChannelData(0).set(resampledBuffer.getChannelData(0)); // Copy just one channel
+                         customAudioBuffer = monoBuffer;
+                    } else {
+                         customAudioBuffer = resampledBuffer; // It's already mono or we don't care
+                    }
+
+
+                    // --- Validation and UI Update ---
                     if (customAudioBuffer.length < requiredSamples) {
                          fileInfo.classList.add('hidden');
-                         fileError.textContent = `File is shorter than ${selectedDuration} seconds (${customAudioBuffer.duration.toFixed(2)}s). Please select a longer file.`;
+                         fileError.textContent = `File is too short for ${selectedDuration} seconds after resampling (${(customAudioBuffer.duration).toFixed(2)}s @ ${FS} Hz). Please select a longer file.`;
                          fileError.classList.remove('hidden');
                          startButton.disabled = true;
                          customAudioBuffer = null; // Invalidate buffer if too short
                     } else {
-                         document.getElementById('fileDuration').textContent = audioBuffer.duration.toFixed(2);
+                         document.getElementById('fileDuration').textContent = (customAudioBuffer.duration).toFixed(2);
+                         document.getElementById('fileOriginalRate').textContent = originalBuffer.sampleRate; // Display original rate
                          fileInfo.classList.remove('hidden');
                          startButton.disabled = false; // Enable start button
                          fileError.classList.add('hidden'); // Hide any previous error
                     }
+
+                     // Update example audio state based on new file
+                     prepareExampleAudio(); // Attempt to regenerate original audio data (will now use the resampled buffer)
                      updateExamplePlayButtonState(); // Update example button state (should enable if successful)
+                     document.getElementById('exampleLoading').textContent = ''; // Clear loading text
 
 
                 } catch (error) {
-                    console.error("Error decoding audio file:", error);
-                    fileError.textContent = `Error decoding audio file: ${error.message}`;
+                    console.error("Error processing audio file:", error);
+                    fileError.textContent = `Error processing audio file: ${error.message}`;
                     fileError.classList.remove('hidden');
                     startButton.disabled = true; // Keep start button disabled
-                     updateExamplePlayButtonState(); // Update example button state (will remain disabled on error)
+                     // Update example button state (will remain disabled on error)
+                     customAudioBuffer = null; // Ensure buffer is null on error
+                     prepareExampleAudio(); // Attempt to regenerate original audio data (will fail)
+                     updateExamplePlayButtonState();
+                     document.getElementById('exampleLoading').textContent = ''; // Clear loading text
+
                 }
             };
             reader.onerror = (e) => {
@@ -1417,7 +1575,11 @@
                 fileError.textContent = "Error reading audio file.";
                 fileError.classList.remove('hidden');
                 startButton.disabled = true; // Keep start button disabled
-                 updateExamplePlayButtonState(); // Update example button state (will remain disabled on error)
+                 // Update example button state (will remain disabled on error)
+                 customAudioBuffer = null; // Ensure buffer is null on error
+                 prepareExampleAudio(); // Attempt to regenerate original audio data (will fail)
+                 updateExamplePlayButtonState();
+                 document.getElementById('exampleLoading').textContent = ''; // Clear loading text
             };
             reader.readAsArrayBuffer(file);
         }
@@ -1454,11 +1616,17 @@
              // Set initial fixed type text
              document.getElementById('filterTypeDisplay').textContent = document.getElementById('fixedFilterType').value;
 
-             // Attach click listener to the example play button
-             document.getElementById('playExampleButton').addEventListener('click', playExample);
+             // Attach click listener to the example play buttons
+             document.getElementById('playExampleFilteredButton').addEventListener('click', playExampleFiltered); // Renamed function
+             document.getElementById('playExampleOriginalButton').addEventListener('click', playExampleOriginal); // Added original button listener
+
 
              // Ensure example filter type buttons are initialized
              selectExampleFilterType(null); // Deselect all initially and update state
+             // Need to explicitly prepare audio after initial load/source toggle for the example player
+              prepareExampleAudio();
+              updateExamplePlayButtonState();
+
         });
 
 

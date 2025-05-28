@@ -101,7 +101,10 @@
         }
 
         .filter-options button.selected,
-        .freq-options button.selected {
+        .freq-options button.selected,
+        .example-filter-options button.selected, /* Added */
+        .example-freq-options button.selected /* Added */
+        {
              background: #45a049; /* Darker green when selected */
         }
 
@@ -132,13 +135,16 @@
             vertical-align: middle;
         }
 
-        .filter-options, .freq-options {
+        .filter-options, .freq-options,
+        .example-filter-options, .example-freq-options /* Added */
+        {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Adjusted min width */
             gap: 10px;
             margin: 15px 0;
         }
-         .freq-options {
+         .freq-options, .example-freq-options /* Added */
+         {
              grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Wider min width for frequencies */
          }
 
@@ -195,6 +201,15 @@
         #guessSection h4 {
             margin-bottom: 10px;
         }
+
+        /* Added Example Section Styles */
+        .example-section .info-box {
+             border-left-color: #2196F3; /* Blue border for examples */
+        }
+         .example-section .info-box h3 {
+             color: #bbdefb; /* Lighter blue */
+         }
+
     </style>
 </head>
 <body>
@@ -252,6 +267,7 @@
                     </div>
                     <div id="fileRequirement" style="font-size: 0.9em; color: #ddd; margin: 5px 0;">
                         Supported: MP3, WAV, OGG, M4A. A random <span id="requiredDuration">3</span>-second segment will be used for each question.
+                         (Minimum duration based on selection above).
                     </div>
                 </div>
             </div>
@@ -281,6 +297,48 @@
                     </div>
                 </div>
             </div>
+
+             <!-- New Example Section -->
+             <div id="exampleSection" class="example-section">
+                 <div class="info-box">
+                     <h3>Hear Filter Examples:</h3>
+                     <p>Select a filter type and, if applicable, a frequency to hear what the filtered audio sounds like.</p>
+
+                     <div id="exampleFilterTypeSection">
+                         <h4>Filter Type:</h4>
+                         <div class="example-filter-options">
+                             <button data-type="Lowpass" onclick="selectExampleFilterType('Lowpass')">Lowpass</button>
+                             <button data-type="Highpass" onclick="selectExampleFilterType('Highpass')">Highpass</button>
+                             <button data-type="Notch" onclick="selectExampleFilterType('Notch')">Notch</button>
+                             <button data-type="Bandpass" onclick="selectExampleFilterType('Bandpass')">Bandpass</button>
+                         </div>
+                     </div>
+
+                     <div id="exampleFrequencySection" class="hidden">
+                         <h4>Center Frequency:</h4>
+                         <div class="example-freq-options">
+                             <button data-freq="100" onclick="selectExampleFrequency(100)">100 Hz (Low)</button>
+                             <button data-freq="600" onclick="selectExampleFrequency(600)">600 Hz (MidLow)</button>
+                             <button data-freq="1500" onclick="selectExampleFrequency(1500)">1500 Hz (Mid)</button>
+                             <button data-freq="5000" onclick="selectExampleFrequency(5000)">5000 Hz (Mid High)</button>
+                             <button data-freq="8000" onclick="selectExampleFrequency(8000)">8000 Hz (High)</button>
+                             <button data-freq="10000" onclick="selectExampleFrequency(10000)">10000 Hz (Very High)</button>
+                         </div>
+                     </div>
+
+                     <div style="text-align: center; margin-top: 20px;">
+                         <button id="playExampleButton" class="play-button" disabled>▶️ Play Example</button>
+                         <div id="exampleLoading" style="text-align:center; margin-top:10px; color: #ddd;"></div>
+                         <div id="exampleError" style="text-align:center; margin-top:10px; color: #f44336;"></div>
+                     </div>
+
+                      <div style="font-size: 0.9em; color: #ddd; margin-top: 15px;">
+                          Audio source: <span id="exampleAudioSource">Pink Noise</span> | Duration: <span id="exampleDuration">3</span> seconds
+                      </div>
+                 </div>
+             </div>
+             <!-- End New Example Section -->
+
 
             <div class="info-box">
                 <h3>Scoring:</h3>
@@ -340,7 +398,6 @@
                     <div id="frequencySection" class="hidden">
                         <h4>What's the center frequency?</h4>
                         <div class="freq-options">
-                            <!-- Updated Frequency Buttons -->
                             <button data-freq="100" onclick="selectFrequency(100)">100 Hz (Low)</button>
                             <button data-freq="600" onclick="selectFrequency(600)">600 Hz (MidLow)</button>
                             <button data-freq="1500" onclick="selectFrequency(1500)">1500 Hz (Mid)</button>
@@ -390,19 +447,22 @@
         let userDuration = 3.0; // User selected duration, default to 3.0
         let currentSourceNode = null; // To keep track of the currently playing audio node
 
+        // --- Example Player Variables ---
+        let exampleSelectedFilterType = null;
+        let exampleSelectedFrequency = null;
+
 
         // Constants matching the Python version
         const FS = 44100;
-        // const DURATION = 3.0; // This will now be determined by userDuration
         const NOISE_AMPLITUDE = 0.4;
         const NUM_QUESTIONS = 10;
 
         const FILTER_TYPES = ["Lowpass", "Highpass", "Notch", "Bandpass"];
         // Filter parameters (simplified Biquad equivalents)
-        const LOWPASS_FREQ = 5000; // Cutoff for Lowpass (Can adjust if needed, but keeping based on image range)
-        const HIGHPASS_FREQ = 150; // Cutoff for Highpass (Can adjust if needed, but keeping based on image range)
-        const PEAK_EQ_GAIN_DB = 9.0; // Gain for Bandpass, -Gain for Notch
-        const PEAK_EQ_BW_OCT = 1.6; // Bandwidth in octaves for Peaking (Notch/Bandpass)
+        const LOWPASS_FREQ = 5000;
+        const HIGHPASS_FREQ = 150;
+        const PEAK_EQ_GAIN_DB = 9.0;
+        const PEAK_EQ_BW_OCT = 1.6;
 
         // --- Updated Frequency Ranges ---
         const NOTCH_BAND_CHOICES = {
@@ -414,13 +474,12 @@
             10000: "Very High"
         };
 
-        const NOTCH_BAND_FREQ_LIST = [100, 600, 1500, 5000, 8000, 10000]; // Added 100 Hz
+        const NOTCH_BAND_FREQ_LIST = [100, 600, 1500, 5000, 8000, 10000];
 
 
         // --- Utility Functions ---
 
         // Generate pink noise using Voss-McCartney algorithm
-        // Now accepts duration parameter
         function generatePinkNoise(duration, sampleRate) {
             const samples = Math.floor(duration * sampleRate);
             const nSources = 16; // Number of random sources
@@ -433,22 +492,14 @@
                 let changed = (i + 1) & -(i + 1);
                  let k = 0;
                  if (changed !== 0) {
-                      // This calculates the index based on the lowest set bit (power of 2)
                       let temp = changed;
                       while (temp > 1) {
                           temp >>= 1;
                           k++;
                       }
-                 } else { // i=0, changed=0
-                     // For i=0, changed is 1. This block is technically not reached for i>=0.
-                     // Keeping for robustness but the logic for k is usually sufficient.
                  }
+                 const idxToChange = k % nSources;
 
-
-                 const idxToChange = k % nSources; // Use modulo in case k > nSources (unlikely with 16)
-
-                 // Only update source if changed indicates this index
-                 // (1 << k) is equivalent to the calculated 'changed' value for i+1
                  if (changed === (1 << k)) {
                       acc -= sources[idxToChange];
                       const newVal = (Math.random() - 0.5) * 2 * maxVal; // Random value [-maxVal, maxVal]
@@ -481,7 +532,7 @@
         }
 
         // Apply filter using OfflineAudioContext
-        async function applyFilter(audioData, filterType, frequency, duration) { // Added duration
+        async function applyFilter(audioData, filterType, frequency, duration) {
             if (!audioContext) {
                  audioContext = new (window.AudioContext || window.webkitAudioContext)();
              }
@@ -570,12 +621,9 @@
                     // This might throw if the node already finished or was stopped by other means
                     console.warn("Error trying to stop previous audio source:", e);
                 }
+                 // Do NOT nullify currentSourceNode here immediately.
+                 // The onended handler of the *new* source will clear it if it's still the current one.
             }
-             // Do NOT immediately set currentSourceNode = null here.
-             // The onended handler will clear it when the *new* source finishes.
-             // If a new source starts before the old one's onended, the old one's
-             // onended handler will correctly see that it's not the currentSourceNode
-             // and won't nullify the new one.
 
 
             const source = audioContext.createBufferSource();
@@ -590,12 +638,20 @@
             return new Promise(resolve => {
                 source.onended = () => {
                     source.disconnect(); // Clean up
-                    // Clear the reference only if it's still the current node
+                    // Clear the reference only if it's still the current node that just finished
                     if (currentSourceNode === source) {
                          currentSourceNode = null;
                     }
                     resolve();
                 }
+                 // Add error handling for the source node itself (e.g. decoding error, though offline context handles most of that)
+                 source.onerror = (e) => {
+                     console.error("Audio source node error:", e);
+                     if (currentSourceNode === source) {
+                         currentSourceNode = null;
+                     }
+                     resolve(); // Resolve the promise so the async function doesn't hang
+                 };
             });
         }
 
@@ -693,6 +749,17 @@
                  await audioContext.resume();
              }
 
+             // Stop any playing examples before starting quiz
+             if (currentSourceNode && currentSourceNode.context.state === 'running') {
+                 try {
+                     currentSourceNode.stop();
+                 } catch (e) {
+                     console.warn("Error stopping example audio on quiz start:", e);
+                 }
+                 currentSourceNode = null; // Clear the reference
+             }
+
+
             // --- Read user selection for duration ---
              userDuration = parseFloat(document.getElementById('sampleDuration').value);
              const requiredSamples = Math.floor(userDuration * FS);
@@ -734,6 +801,17 @@
         async function loadQuestion() {
             const question = questions[currentQuestion];
 
+            // Stop any currently playing audio (quiz or example)
+             if (currentSourceNode && currentSourceNode.context.state === 'running') {
+                 try {
+                     currentSourceNode.stop();
+                 } catch (e) {
+                     console.warn("Error stopping audio before loading question:", e);
+                 }
+                 currentSourceNode = null;
+             }
+
+
             // Reset UI elements
             document.getElementById('feedback').classList.add('hidden');
             document.getElementById('nextQuestion').classList.add('hidden');
@@ -758,6 +836,7 @@
             // Progress *before* current question starts loading
             document.getElementById('progressFill').style.width = `${((currentQuestion) / NUM_QUESTIONS) * 100}%`;
              document.getElementById('audioLoading').textContent = ''; // Clear previous loading text
+
 
             // Configure UI based on mode
             if (useFixedFilter) {
@@ -821,6 +900,16 @@
         }
 
         async function playOriginal() {
+             // Stop any currently playing audio (quiz or example)
+             if (currentSourceNode && currentSourceNode.context.state === 'running') {
+                 try {
+                     currentSourceNode.stop();
+                 } catch (e) {
+                     console.warn("Error stopping audio before playing original:", e);
+                 }
+                 currentSourceNode = null;
+             }
+
             const question = questions[currentQuestion];
             // playAudioBuffer expects an AudioBuffer, originalAudio is Float32Array
             // Need to create a temporary AudioBuffer of the correct duration
@@ -835,6 +924,16 @@
         }
 
         async function playFiltered() {
+             // Stop any currently playing audio (quiz or example)
+             if (currentSourceNode && currentSourceNode.context.state === 'running') {
+                 try {
+                     currentSourceNode.stop();
+                 } catch (e) {
+                     console.warn("Error stopping audio before playing filtered:", e);
+                 }
+                 currentSourceNode = null;
+             }
+
             const question = questions[currentQuestion];
             // filteredAudio is already an AudioBuffer from applyFilter
             if (question.filteredAudio) {
@@ -1046,12 +1145,170 @@
             window.location.reload();
         }
 
+        // --- Example Player Logic ---
+
+        function selectExampleFilterType(type) {
+             exampleSelectedFilterType = type;
+             exampleSelectedFrequency = null; // Reset frequency when type changes
+
+             // Update button styles
+             document.querySelectorAll('.example-filter-options button').forEach(btn => {
+                 btn.classList.remove('selected');
+                 if (btn.getAttribute('data-type') === type) {
+                     btn.classList.add('selected');
+                 }
+             });
+              document.querySelectorAll('.example-freq-options button').forEach(btn => btn.classList.remove('selected')); // Clear freq styles
+
+             // Show/hide frequency options based on type
+             if (type === 'Notch' || type === 'Bandpass') {
+                 document.getElementById('exampleFrequencySection').classList.remove('hidden');
+                 // Disable play button until frequency is selected
+                 document.getElementById('playExampleButton').disabled = true;
+             } else { // Lowpass or Highpass
+                 document.getElementById('exampleFrequencySection').classList.add('hidden');
+                 // Enable play button as type is enough
+                 updateExamplePlayButtonState(); // Use helper to check audio source readiness too
+             }
+             document.getElementById('exampleError').textContent = ''; // Clear previous error
+             document.getElementById('exampleLoading').textContent = ''; // Clear previous loading
+
+        }
+
+        function selectExampleFrequency(freq) {
+             exampleSelectedFrequency = freq;
+
+             // Update button styles
+             document.querySelectorAll('.example-freq-options button').forEach(btn => {
+                 btn.classList.remove('selected');
+                 if (parseInt(btn.getAttribute('data-freq')) === freq) {
+                     btn.classList.add('selected');
+                 }
+             });
+
+             // Enable play button now that both type and frequency are selected
+             updateExamplePlayButtonState(); // Use helper to check audio source readiness too
+             document.getElementById('exampleError').textContent = ''; // Clear previous error
+             document.getElementById('exampleLoading').textContent = ''; // Clear previous loading
+
+        }
+
+        async function playExample() {
+            const type = exampleSelectedFilterType;
+            const freq = exampleSelectedFrequency;
+            const duration = userDuration; // Use the currently selected quiz duration
+
+             if (!type) {
+                 console.warn("No example filter type selected.");
+                 document.getElementById('exampleError').textContent = 'Please select a filter type.';
+                 return;
+             }
+             if ((type === 'Notch' || type === 'Bandpass') && freq === null) {
+                 console.warn("Notch/Bandpass selected but no frequency.");
+                 document.getElementById('exampleError').textContent = 'Please select a center frequency.';
+                 return;
+             }
+
+             // --- Determine Audio Source ---
+             let originalAudioData;
+             const numSamples = Math.floor(duration * FS);
+             const audioSourceText = document.querySelector('input[name="audioSource"]:checked').value === 'file' ? 'Uploaded File' : 'Pink Noise';
+
+             document.getElementById('exampleError').textContent = ''; // Clear previous error
+
+             if (audioSourceText === 'Uploaded File' && customAudioBuffer) {
+                  // Use a segment of the custom audio buffer
+                  if (customAudioBuffer.length < numSamples) {
+                       document.getElementById('exampleError').textContent = `Uploaded file is too short for ${duration}s duration.`;
+                       return;
+                  }
+                  const maxStartSample = Math.max(0, customAudioBuffer.length - numSamples);
+                  const startSample = Math.floor(Math.random() * (maxStartSample + 1));
+                  const endSample = startSample + numSamples;
+                  originalAudioData = customAudioBuffer.getChannelData(0).slice(startSample, endSample);
+
+                   // Pad if necessary (shouldn't be needed if length check passes, but safety)
+                   if (originalAudioData.length < numSamples) {
+                        const paddedData = new Float32Array(numSamples);
+                        paddedData.set(originalAudioData);
+                        originalAudioData = paddedData;
+                   }
+
+             } else if (audioSourceText === 'Pink Noise') {
+                 originalAudioData = generatePinkNoise(duration, FS);
+             } else {
+                 document.getElementById('exampleError').textContent = 'Please upload an audio file first.';
+                 return;
+             }
+
+
+             // --- Apply and Play ---
+             document.getElementById('playExampleButton').disabled = true;
+             document.getElementById('exampleLoading').textContent = 'Generating audio...';
+
+            try {
+                 const filteredAudioBuffer = await applyFilter(originalAudioData, type, freq || (type === 'Lowpass' ? LOWPASS_FREQ : HIGHPASS_FREQ), duration); // Use default LP/HP freq if freq is null
+
+                 document.getElementById('exampleLoading').textContent = 'Playing...'; // Update status
+                 await playAudioBuffer(filteredAudioBuffer);
+
+                 document.getElementById('exampleLoading').textContent = 'Done.'; // Final status
+                 setTimeout(() => { document.getElementById('exampleLoading').textContent = ''; }, 1000); // Clear after 1 sec
+
+
+             } catch (e) {
+                 console.error("Error playing example:", e);
+                 document.getElementById('exampleError').textContent = 'Error playing audio.';
+                 document.getElementById('exampleLoading').textContent = '';
+
+             } finally {
+                  // Re-enable button using the state check
+                  updateExamplePlayButtonState();
+             }
+        }
+
+         // Helper function to update the example play button disabled state
+         function updateExamplePlayButtonState() {
+             const playButton = document.getElementById('playExampleButton');
+             const selectedDuration = parseFloat(document.getElementById('sampleDuration').value);
+             const requiredSamples = Math.floor(selectedDuration * FS);
+             const isFileSource = document.querySelector('input[name="audioSource"]:checked').value === 'file';
+
+             let canPlay = false;
+             // Must have a type selected
+             if (exampleSelectedFilterType !== null) {
+                 // If Notch or Bandpass, must also have a frequency selected
+                 if (exampleSelectedFilterType === 'Notch' || exampleSelectedFilterType === 'Bandpass') {
+                     if (exampleSelectedFrequency !== null) {
+                          canPlay = true;
+                     }
+                 } else { // Lowpass or Highpass only requires type
+                     canPlay = true;
+                 }
+             }
+
+             // If using a file source, also need a loaded audio buffer that is long enough
+             if (canPlay && isFileSource) {
+                 if (!customAudioBuffer || customAudioBuffer.length < requiredSamples) {
+                      canPlay = false;
+                 }
+             }
+
+             playButton.disabled = !canPlay;
+
+             // Update example info text
+             document.getElementById('exampleAudioSource').textContent = isFileSource ? (customAudioBuffer ? 'Uploaded File' : 'Uploaded File (Not loaded)') : 'Pink Noise';
+             document.getElementById('exampleDuration').textContent = selectedDuration;
+         }
+
+
         // --- Setup Options Handling ---
 
-         // Update file requirement text when duration changes
          document.getElementById('sampleDuration').addEventListener('change', () => {
              const selectedDuration = parseFloat(document.getElementById('sampleDuration').value);
              document.getElementById('requiredDuration').textContent = selectedDuration;
+             document.getElementById('exampleDuration').textContent = selectedDuration; // Update example duration display
+
 
              // Re-validate file length if custom audio is selected
               if (document.querySelector('input[name="audioSource"]:checked').value === 'file') {
@@ -1067,16 +1324,18 @@
                   // If not file mode, ensure button is enabled
                   document.getElementById('startButton').disabled = false;
               }
+
+              updateExamplePlayButtonState(); // Update example button state based on new duration/file status
+
          });
 
 
         function toggleAudioSource() {
-            const audioSource = document.querySelector('input[name="audioSource"]:checked').value;
+            useCustomAudio = document.querySelector('input[name="audioSource"]:checked').value === 'file';
             const selectedDuration = parseFloat(document.getElementById('sampleDuration').value);
             const requiredSamples = Math.floor(selectedDuration * FS);
 
-
-            if (audioSource === 'file') {
+            if (useCustomAudio) {
                 document.getElementById('fileSection').classList.remove('hidden');
                 // Disable start button if file is not yet loaded/valid or too short
                 document.getElementById('startButton').disabled = !customAudioBuffer || customAudioBuffer.length < requiredSamples;
@@ -1086,6 +1345,9 @@
                  document.getElementById('fileError').classList.add('hidden');
                 document.getElementById('startButton').disabled = false; // Enable for pink noise
             }
+             updateExamplePlayButtonState(); // Update example button state based on new source type
+             document.getElementById('exampleAudioSource').textContent = useCustomAudio ? (customAudioBuffer ? 'Uploaded File' : 'Uploaded File (Not loaded)') : 'Pink Noise';
+
         }
 
         async function handleAudioFile() {
@@ -1104,7 +1366,14 @@
             customAudioBuffer = null; // Clear previous buffer
             startButton.disabled = true; // Disable while processing
 
+             updateExamplePlayButtonState(); // Update example button state (will be disabled during loading)
+             document.getElementById('exampleAudioSource').textContent = 'Uploaded File (Loading...)';
+             document.getElementById('exampleError').textContent = '';
+
+
             if (!file) {
+                 updateExamplePlayButtonState(); // Will remain disabled if no file
+                 document.getElementById('exampleAudioSource').textContent = 'Uploaded File (No file)';
                 return; // No file selected, button remains disabled
             }
 
@@ -1132,6 +1401,7 @@
                          startButton.disabled = false; // Enable start button
                          fileError.classList.add('hidden'); // Hide any previous error
                     }
+                     updateExamplePlayButtonState(); // Update example button state (should enable if successful)
 
 
                 } catch (error) {
@@ -1139,6 +1409,7 @@
                     fileError.textContent = `Error decoding audio file: ${error.message}`;
                     fileError.classList.remove('hidden');
                     startButton.disabled = true; // Keep start button disabled
+                     updateExamplePlayButtonState(); // Update example button state (will remain disabled on error)
                 }
             };
             reader.onerror = (e) => {
@@ -1146,6 +1417,7 @@
                 fileError.textContent = "Error reading audio file.";
                 fileError.classList.remove('hidden');
                 startButton.disabled = true; // Keep start button disabled
+                 updateExamplePlayButtonState(); // Update example button state (will remain disabled on error)
             };
             reader.readAsArrayBuffer(file);
         }
@@ -1174,11 +1446,19 @@
         document.addEventListener('DOMContentLoaded', () => {
              // Update file requirement text on page load based on default duration
              document.getElementById('requiredDuration').textContent = parseFloat(document.getElementById('sampleDuration').value);
+             document.getElementById('exampleDuration').textContent = parseFloat(document.getElementById('sampleDuration').value); // Initialize example duration display
 
-             toggleAudioSource(); // Initialize file section visibility and button state
+
+             toggleAudioSource(); // Initialize file section visibility and button state (calls updateExamplePlayButtonState)
              toggleFilterMode(); // Initialize fixed filter section visibility
              // Set initial fixed type text
              document.getElementById('filterTypeDisplay').textContent = document.getElementById('fixedFilterType').value;
+
+             // Attach click listener to the example play button
+             document.getElementById('playExampleButton').addEventListener('click', playExample);
+
+             // Ensure example filter type buttons are initialized
+             selectExampleFilterType(null); // Deselect all initially and update state
         });
 
 

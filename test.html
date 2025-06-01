@@ -5,424 +5,654 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hearing Test Quiz</title>
     <style>
+        /* CSS Custom Properties for Design System */
         :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --glass-bg: rgba(255, 255, 255, 0.1);
-            --glass-border: rgba(255, 255, 255, 0.18);
-            --success-color: #4CAF50;
-            --warning-color: #FF9800;
-            --error-color: #f44336;
-            --info-color: #2196F3;
-            --transition: all 0.3s ease;
+            /* Color Palette */
+            --primary-500: #3b82f6;
+            --primary-600: #2563eb;
+            --primary-700: #1d4ed8;
+            --success-500: #10b981;
+            --success-600: #059669;
+            --warning-500: #f59e0b;
+            --warning-600: #d97706;
+            --error-500: #ef4444;
+            --error-600: #dc2626;
+            
+            /* Gradients */
+            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-surface: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            --gradient-accent: linear-gradient(90deg, var(--primary-500), var(--primary-600));
+            
+            /* Glass Morphism */
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            
+            /* Typography */
+            --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-mono: 'JetBrains Mono', Monaco, 'Cascadia Code', monospace;
+            
+            /* Spacing */
+            --space-1: 0.25rem;
+            --space-2: 0.5rem;
+            --space-3: 0.75rem;
+            --space-4: 1rem;
+            --space-5: 1.25rem;
+            --space-6: 1.5rem;
+            --space-8: 2rem;
+            --space-10: 2.5rem;
+            --space-12: 3rem;
+            
+            /* Borders */
+            --radius-sm: 0.5rem;
+            --radius-md: 0.75rem;
+            --radius-lg: 1rem;
+            --radius-xl: 1.5rem;
+            
+            /* Transitions */
+            --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
         }
 
+        /* Reset and Base */
         * {
             box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
-            background: var(--primary-gradient);
+            font-family: var(--font-primary);
+            background: var(--gradient-primary);
             color: white;
-            min-height: 100vh;
             line-height: 1.6;
+            min-height: 100vh;
+            padding: var(--space-4);
+            overflow-x: hidden;
         }
 
-        .container {
-            background: var(--glass-bg);
-            backdrop-filter: blur(15px);
-            border-radius: 25px;
-            padding: 30px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-            border: 1px solid var(--glass-border);
-        }
-
+        /* Typography */
         h1 {
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 700;
             text-align: center;
-            margin-bottom: 30px;
-            font-size: 2.5em;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            background: linear-gradient(45deg, #fff, #e3f2fd);
+            margin-bottom: var(--space-8);
+            background: linear-gradient(135deg, #fff, #e3f2fd, #bbdefb);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            text-shadow: none;
         }
 
-        .info-box, .question-box {
-            background: rgba(255, 255, 255, 0.15);
-            padding: 25px;
-            border-radius: 15px;
-            margin: 20px 0;
-            transition: var(--transition);
+        h1::before {
+            content: '🎧 ';
+            -webkit-text-fill-color: initial;
         }
 
-        .info-box:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: var(--space-4);
+            color: #e3f2fd;
         }
 
-        .info-box.success { border-left: 5px solid var(--success-color); }
-        .info-box.info { border-left: 5px solid var(--info-color); }
-        .info-box.warning { border-left: 5px solid var(--warning-color); }
-
-        .info-box h3 {
-            margin-top: 0;
-            color: #bcf5bc;
+        h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: var(--space-3);
+            color: #f0f9ff;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: var(--space-2);
         }
 
-        .question-box {
-            text-align: center;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .btn {
-            background: linear-gradient(45deg, var(--success-color), #45a049);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 16px;
-            margin: 8px;
-            transition: var(--transition);
-            box-shadow: 0 4px 15px 0 rgba(76, 175, 80, 0.3);
+        h4 {
+            font-size: 1.1rem;
             font-weight: 500;
+            margin-bottom: var(--space-3);
+            color: #e0f2fe;
+        }
+
+        /* Layout */
+        .container {
+            max-width: 56rem;
+            margin: 0 auto;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius-xl);
+            padding: var(--space-8);
+            box-shadow: var(--glass-shadow);
+            border: 1px solid var(--glass-border);
             position: relative;
             overflow: hidden;
         }
 
-        .btn::before {
+        .container::before {
             content: '';
             position: absolute;
             top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: var(--transition);
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
         }
 
-        .btn:hover:not(:disabled)::before {
-            left: 100%;
+        /* Cards */
+        .card {
+            background: var(--gradient-surface);
+            backdrop-filter: blur(10px);
+            border-radius: var(--radius-lg);
+            padding: var(--space-6);
+            margin-bottom: var(--space-6);
+            border: 1px solid var(--glass-border);
+            transition: var(--transition-normal);
+            position: relative;
+            overflow: hidden;
         }
 
-        .btn:hover:not(:disabled) {
+        .card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px 0 rgba(76, 175, 80, 0.4);
+            box-shadow: 0 12px 40px rgba(31, 38, 135, 0.2);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .card.success { border-left: 4px solid var(--success-500); }
+        .card.info { border-left: 4px solid var(--primary-500); }
+        .card.warning { border-left: 4px solid var(--warning-500); }
+        .card.error { border-left: 4px solid var(--error-500); }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-2);
+            padding: var(--space-3) var(--space-5);
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition-normal);
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            white-space: nowrap;
+            min-width: fit-content;
         }
 
         .btn:disabled {
-            background: #666;
+            opacity: 0.5;
             cursor: not-allowed;
-            opacity: 0.6;
-            transform: none;
-            box-shadow: none;
+            transform: none !important;
         }
 
         .btn-primary {
-            background: linear-gradient(45deg, var(--info-color), #1976D2);
-            font-size: 18px;
-            padding: 15px 30px;
-            box-shadow: 0 4px 15px 0 rgba(33, 150, 243, 0.3);
+            background: var(--gradient-accent);
+            color: white;
+            padding: var(--space-4) var(--space-8);
+            font-size: 1rem;
+            font-weight: 600;
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
         }
 
         .btn-primary:hover:not(:disabled) {
-            box-shadow: 0 6px 20px 0 rgba(33, 150, 243, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, var(--success-500), var(--success-600));
+            color: white;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-success:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
         }
 
         .btn.selected {
-            background: #45a049;
-            box-shadow: 0 0 20px rgba(76, 175, 80, 0.6);
+            background: var(--success-500);
+            color: white;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.5);
         }
 
+        .btn-small {
+            padding: var(--space-2) var(--space-4);
+            font-size: 0.85rem;
+        }
+
+        /* Grids */
         .grid {
             display: grid;
-            gap: 10px;
-            margin: 15px 0;
+            gap: var(--space-3);
+            margin: var(--space-4) 0;
         }
 
         .grid-auto {
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
         }
 
         .grid-freq {
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
         }
 
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+
+        /* Form Controls */
         .form-control {
-            background: rgba(255, 255, 255, 0.9);
-            color: #333;
-            border: none;
-            padding: 12px;
-            border-radius: 10px;
-            margin: 8px;
-            font-size: 16px;
+            background: rgba(255, 255, 255, 0.95);
+            color: #1f2937;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: var(--radius-md);
+            padding: var(--space-3) var(--space-4);
+            font-size: 0.95rem;
+            transition: var(--transition-fast);
             width: 100%;
-            transition: var(--transition);
         }
 
         .form-control:focus {
             outline: none;
-            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3);
+            border-color: var(--primary-500);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
-        .radio-group {
+        /* Radio and Checkbox Groups */
+        .radio-group, .checkbox-group {
             display: flex;
             flex-wrap: wrap;
-            gap: 15px;
-            margin: 15px 0;
+            gap: var(--space-4);
+            margin: var(--space-4) 0;
         }
 
-        .radio-item {
+        .radio-item, .checkbox-item {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: var(--space-2);
             cursor: pointer;
-            padding: 8px 12px;
-            border-radius: 8px;
-            transition: var(--transition);
+            padding: var(--space-3);
+            border-radius: var(--radius-md);
+            transition: var(--transition-fast);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid transparent;
         }
 
-        .radio-item:hover {
+        .radio-item:hover, .checkbox-item:hover {
             background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
         }
 
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin: 10px 0;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 8px;
-            transition: var(--transition);
+        input[type="radio"], input[type="checkbox"] {
+            accent-color: var(--primary-500);
+            transform: scale(1.1);
         }
 
-        .checkbox-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
+        /* Progress Bar */
         .progress-container {
-            width: 100%;
-            height: 25px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-lg);
+            height: 12px;
             overflow: hidden;
-            margin: 20px 0;
+            margin: var(--space-6) 0;
             position: relative;
         }
 
         .progress-bar {
             height: 100%;
-            background: linear-gradient(90deg, var(--success-color), #45a049);
-            transition: width 0.5s ease;
-            border-radius: 15px;
+            background: var(--gradient-accent);
+            border-radius: var(--radius-lg);
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
         }
 
-        .progress-text {
+        .progress-bar::after {
+            content: '';
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-weight: bold;
-            font-size: 14px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
         }
 
-        .score-display {
-            font-size: 1.5em;
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .progress-text {
             text-align: center;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 20px;
-            border-radius: 15px;
-            margin: 20px 0;
+            margin-top: var(--space-2);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        /* Status Messages */
+        .status-message {
+            padding: var(--space-4);
+            border-radius: var(--radius-md);
+            margin: var(--space-4) 0;
+            font-weight: 500;
+            border-left: 4px solid;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .status-message.success {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: var(--success-500);
+            color: #a7f3d0;
+        }
+
+        .status-message.error {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: var(--error-500);
+            color: #fecaca;
+        }
+
+        .status-message.warning {
+            background: rgba(245, 158, 11, 0.15);
+            border-color: var(--warning-500);
+            color: #fde68a;
+        }
+
+        .status-message.info {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: var(--primary-500);
+            color: #dbeafe;
+        }
+
+        /* Score Display */
+        .score-display {
+            background: var(--gradient-surface);
+            border-radius: var(--radius-lg);
+            padding: var(--space-6);
+            text-align: center;
+            margin: var(--space-6) 0;
+            border: 1px solid var(--glass-border);
             backdrop-filter: blur(10px);
         }
 
+        .score-display .score {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--success-500);
+            margin-bottom: var(--space-2);
+        }
+
+        /* Audio Controls */
+        .audio-controls {
+            display: flex;
+            gap: var(--space-3);
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: var(--space-6) 0;
+        }
+
+        /* File Upload */
+        .file-upload-area {
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: var(--radius-lg);
+            padding: var(--space-8);
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition-normal);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .file-upload-area:hover {
+            border-color: var(--primary-500);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .file-upload-area.dragover {
+            border-color: var(--primary-500);
+            background: rgba(59, 130, 246, 0.1);
+            transform: scale(1.02);
+        }
+
+        /* Waveform Visualization */
+        .waveform-container {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: var(--radius-md);
+            margin: var(--space-4) 0;
+            overflow: hidden;
+            position: relative;
+            height: 120px;
+        }
+
+        .waveform-canvas {
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+
+        .selection-overlay {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            background: rgba(59, 130, 246, 0.2);
+            border: 2px solid var(--primary-500);
+            pointer-events: none;
+        }
+
+        /* Timeline */
+        .audio-timeline {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-sm);
+            margin: var(--space-4) 0;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .timeline-progress {
+            height: 100%;
+            background: var(--gradient-accent);
+            border-radius: var(--radius-sm);
+            transition: width 0.1s linear;
+        }
+
+        .timeline-handle {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            cursor: grab;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            border: 2px solid var(--primary-500);
+        }
+
+        .timeline-handle:active {
+            cursor: grabbing;
+            transform: translate(-50%, -50%) scale(1.2);
+        }
+
+        /* Feedback */
         .feedback {
-            padding: 20px;
-            border-radius: 15px;
-            margin: 15px 0;
+            padding: var(--space-5);
+            border-radius: var(--radius-lg);
+            margin: var(--space-5) 0;
+            border-left: 4px solid;
+            animation: slideIn 0.4s ease-out;
             backdrop-filter: blur(10px);
         }
 
         .feedback.correct {
-            background: rgba(76, 175, 80, 0.2);
-            border-left: 5px solid var(--success-color);
+            background: rgba(16, 185, 129, 0.15);
+            border-color: var(--success-500);
+            color: #a7f3d0;
         }
 
         .feedback.incorrect {
-            background: rgba(244, 67, 54, 0.2);
-            border-left: 5px solid var(--error-color);
+            background: rgba(239, 68, 68, 0.15);
+            border-color: var(--error-500);
+            color: #fecaca;
         }
 
         .feedback.partial {
-            background: rgba(255, 152, 0, 0.2);
-            border-left: 5px solid var(--warning-color);
+            background: rgba(245, 158, 11, 0.15);
+            border-color: var(--warning-500);
+            color: #fde68a;
         }
 
-        .hidden { display: none; }
-
-        .warning-box {
-            background: var(--warning-color);
-            color: white;
-            padding: 20px;
-            border-radius: 15px;
-            margin: 20px 0;
-            text-align: center;
-            font-weight: bold;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.8; }
-        }
-
+        /* Loading Spinner */
         .loading-spinner {
             display: inline-block;
             width: 20px;
             height: 20px;
-            border: 3px solid rgba(255,255,255,.3);
+            border: 3px solid rgba(255,255,255,.2);
             border-radius: 50%;
             border-top-color: #fff;
             animation: spin 1s ease-in-out infinite;
-            margin-right: 10px;
+            margin-right: var(--space-2);
         }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
-        .status-message {
+        /* Warning Box */
+        .warning-box {
+            background: linear-gradient(135deg, var(--warning-500), var(--warning-600));
+            color: white;
+            padding: var(--space-5);
+            border-radius: var(--radius-lg);
+            margin: var(--space-6) 0;
             text-align: center;
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 8px;
-            transition: var(--transition);
+            font-weight: 600;
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
         }
 
-        .status-message.error {
-            background: rgba(244, 67, 54, 0.2);
-            color: #ffcdd2;
-        }
+        /* Utility Classes */
+        .hidden { display: none !important; }
+        .text-center { text-align: center; }
+        .text-mono { font-family: var(--font-mono); }
+        .text-sm { font-size: 0.875rem; }
+        .text-xs { font-size: 0.75rem; }
+        .font-bold { font-weight: 700; }
+        .font-medium { font-weight: 500; }
 
-        .status-message.success {
-            background: rgba(76, 175, 80, 0.2);
-            color: #c8e6c9;
-        }
-
-        .status-message.info {
-            background: rgba(33, 150, 243, 0.2);
-            color: #bbdefb;
-        }
-
-        .file-upload-area {
-            border: 2px dashed rgba(255, 255, 255, 0.3);
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            transition: var(--transition);
-            cursor: pointer;
-        }
-
-        .file-upload-area:hover {
-            border-color: rgba(255, 255, 255, 0.6);
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .file-upload-area.dragover {
-            border-color: var(--info-color);
-            background: rgba(33, 150, 243, 0.1);
-        }
-
+        /* Responsive Design */
         @media (max-width: 768px) {
             body {
-                padding: 10px;
+                padding: var(--space-2);
             }
             
             .container {
-                padding: 20px;
+                padding: var(--space-5);
             }
             
             h1 {
-                font-size: 2em;
+                font-size: 2rem;
             }
             
-            .grid-auto, .grid-freq {
+            .grid-auto, .grid-freq, .grid-2 {
                 grid-template-columns: 1fr;
             }
             
-            .radio-group {
+            .radio-group, .checkbox-group {
                 flex-direction: column;
+            }
+
+            .audio-controls {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .btn-small {
+                width: auto;
             }
         }
 
-        .tooltip {
-            position: relative;
-            cursor: help;
+        @media (max-width: 480px) {
+            .container {
+                padding: var(--space-4);
+            }
+            
+            .card {
+                padding: var(--space-4);
+            }
         }
 
-        .tooltip::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.9);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 12px;
-            white-space: nowrap;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s;
-            z-index: 1000;
+        /* Accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
         }
 
-        .tooltip:hover::after {
-            opacity: 1;
+        /* Focus states for keyboard navigation */
+        .btn:focus-visible,
+        .form-control:focus-visible,
+        .radio-item:focus-within,
+        .checkbox-item:focus-within {
+            outline: 2px solid var(--primary-500);
+            outline-offset: 2px;
+        }
+
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            :root {
+                --glass-bg: rgba(255, 255, 255, 0.2);
+                --glass-border: rgba(255, 255, 255, 0.4);
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎧 Hearing Test Quiz</h1>
+        <h1>Hearing Test Quiz</h1>
 
-        <div class="warning-box">
-            ⚠️ Please set your volume to a comfortable level before starting! Use headphones for best results.
-        </div>
-
+        <!-- Setup Section -->
         <div id="setup" class="setup-section">
-            <div class="info-box success">
-                <h3>🎯 How it works:</h3>
+            <div class="warning-box">
+                ⚠️ Please set your volume to a comfortable level before starting! Use headphones for best results.
+            </div>
+
+            <div class="card success">
+                <h3>🎯 How it works</h3>
                 <p>You'll hear original audio, then filtered audio. Your task:</p>
-                <ol>
+                <ol style="margin-left: var(--space-5); margin-top: var(--space-2);">
                     <li>Identify the filter type: Lowpass, Highpass, Notch, or Bandpass</li>
                     <li>If it's Notch or Bandpass, also guess the center frequency from the options</li>
                 </ol>
             </div>
 
-            <div class="info-box info">
-                <h3>⏱️ Audio Sample Duration:</h3>
-                <select id="sampleDuration" class="form-control">
-                    <option value="1.0">1 second</option>
-                    <option value="2.0">2 seconds</option>
-                    <option value="3.0" selected>3 seconds (Default)</option>
-                    <option value="5.0">5 seconds</option>
-                </select>
-            </div>
-
-            <div class="info-box info">
-                <h3>🎵 Audio Source:</h3>
+            <div class="card info">
+                <h3>🎵 Audio Source</h3>
                 <div class="radio-group">
                     <label class="radio-item">
                         <input type="radio" name="audioSource" value="pink" checked>
@@ -430,25 +660,83 @@
                     </label>
                     <label class="radio-item">
                         <input type="radio" name="audioSource" value="file">
-                        <span>Upload Audio File</span>
+                        <span>Upload Audio File (Select Segment)</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="audioSource" value="random">
+                        <span>Upload Audio File (Random Segments)</span>
                     </label>
                 </div>
 
                 <div id="fileSection" class="hidden">
                     <div class="file-upload-area" onclick="document.getElementById('audioFile').click()">
                         <input type="file" id="audioFile" accept="audio/*" class="hidden">
-                        <div>📁 Click to select audio file or drag and drop</div>
+                        <div style="margin-bottom: var(--space-2);">📁 Click to select audio file or drag and drop</div>
                         <small>Supported: MP3, WAV, OGG, M4A</small>
                     </div>
                     <div id="fileStatus" class="status-message hidden"></div>
-                    <div class="status-message info">
-                        A random <span id="requiredDuration">3</span>-second segment (resampled to 44100 Hz) will be used for each question.
+                    
+                    <div id="randomSegmentInfo" class="status-message info hidden">
+                        <strong>Random Segment Mode:</strong> Each quiz question will use a different random <span id="randomDuration">3</span>-second segment from your uploaded file (resampled to 44100 Hz).
+                    </div>
+                    
+                    <div id="segmentSelector" class="hidden">
+                        <h4>🎯 Select Audio Segment</h4>
+                        
+                        <div class="audio-controls">
+                            <button id="playFullAudio" class="btn btn-secondary btn-small">▶️ Play Full</button>
+                            <button id="pauseAudio" class="btn btn-secondary btn-small">⏸️ Pause</button>
+                            <button id="playSelection" class="btn btn-success btn-small" disabled>▶️ Play Selection</button>
+                        </div>
+
+                        <div class="waveform-container">
+                            <canvas id="waveformCanvas" class="waveform-canvas"></canvas>
+                            <div id="selectionOverlay" class="selection-overlay hidden"></div>
+                        </div>
+
+                        <div class="audio-timeline" id="audioTimeline">
+                            <div id="timelineProgress" class="timeline-progress"></div>
+                            <div id="timelineHandle" class="timeline-handle"></div>
+                        </div>
+
+                        <div class="grid grid-2">
+                            <div>
+                                <label for="startTime" class="text-sm font-medium">Start Time (seconds)</label>
+                                <input type="number" id="startTime" class="form-control" min="0" step="0.1" value="0">
+                            </div>
+                            <div>
+                                <label for="endTime" class="text-sm font-medium">End Time (seconds)</label>
+                                <input type="number" id="endTime" class="form-control" min="0" step="0.1" value="3">
+                            </div>
+                        </div>
+
+                        <div class="text-center">
+                            <button id="resetSelection" class="btn btn-secondary btn-small">🔄 Reset Selection</button>
+                        </div>
+
+                        <div class="status-message success text-center">
+                            <strong>Selected Duration:</strong> <span id="selectedDuration">3.0</span> seconds<br>
+                            <small>This selected duration will be used for the quiz!</small>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="info-box info">
-                <h3>🎛️ Filter Mode:</h3>
+            <div id="durationSection" class="card info">
+                <h3>⏱️ Audio Sample Duration</h3>
+                <select id="sampleDuration" class="form-control">
+                    <option value="1.0">1 second</option>
+                    <option value="2.0">2 seconds</option>
+                    <option value="3.0" selected>3 seconds (Default)</option>
+                    <option value="5.0">5 seconds</option>
+                </select>
+                <div class="status-message info text-sm">
+                    This duration will be used for pink noise or random segments from uploaded files.
+                </div>
+            </div>
+
+            <div class="card info">
+                <h3>🎛️ Filter Mode</h3>
                 <div class="radio-group">
                     <label class="radio-item">
                         <input type="radio" name="filterMode" value="random" checked>
@@ -465,50 +753,51 @@
                         <option value="Notch">Notch Filter</option>
                         <option value="Bandpass">Bandpass Filter</option>
                     </select>
-                    <div class="info-box warning">
+                    <div class="status-message warning">
                         <strong>Focus Mode:</strong> The filter type is fixed to <strong><span id="filterTypeDisplay">Notch</span></strong>.
                         You'll only need to identify the center frequency.
                     </div>
                 </div>
             </div>
 
-            <div id="exampleSection" class="info-box info">
-                <h3>🔊 Hear Filter Examples:</h3>
+            <div id="exampleSection" class="card info">
+                <h3>🔊 Hear Filter Examples</h3>
                 <p>Select a filter type and frequency to hear what the filtered audio sounds like.</p>
 
-                <h4>Filter Type:</h4>
+                <h4>Filter Type</h4>
                 <div class="grid grid-auto" id="exampleFilterTypes">
-                    <button class="btn" data-type="Lowpass">Lowpass</button>
-                    <button class="btn" data-type="Highpass">Highpass</button>
-                    <button class="btn" data-type="Notch">Notch</button>
-                    <button class="btn" data-type="Bandpass">Bandpass</button>
+                    <button class="btn btn-secondary" data-type="Lowpass">Lowpass</button>
+                    <button class="btn btn-secondary" data-type="Highpass">Highpass</button>
+                    <button class="btn btn-secondary" data-type="Notch">Notch</button>
+                    <button class="btn btn-secondary" data-type="Bandpass">Bandpass</button>
                 </div>
 
                 <div id="exampleFrequencySection" class="hidden">
-                    <h4>Center Frequency:</h4>
+                    <h4>Center Frequency</h4>
                     <div class="grid grid-freq" id="exampleFrequencies">
-                        <button class="btn" data-freq="100">100 Hz (Low)</button>
-                        <button class="btn" data-freq="600">600 Hz (Mid-Low)</button>
-                        <button class="btn" data-freq="1500">1500 Hz (Mid)</button>
-                        <button class="btn" data-freq="5000">5000 Hz (Mid-High)</button>
-                        <button class="btn" data-freq="8000">8000 Hz (High)</button>
-                        <button class="btn" data-freq="10000">10000 Hz (Very High)</button>
+                        <button class="btn btn-secondary" data-freq="100">100 Hz (Low)</button>
+                        <button class="btn btn-secondary" data-freq="600">600 Hz (Mid-Low)</button>
+                        <button class="btn btn-secondary" data-freq="1500">1500 Hz (Mid)</button>
+                        <button class="btn btn-secondary" data-freq="5000">5000 Hz (Mid-High)</button>
+                        <button class="btn btn-secondary" data-freq="8000">8000 Hz (High)</button>
+                        <button class="btn btn-secondary" data-freq="10000">10000 Hz (Very High)</button>
                     </div>
                 </div>
 
-                <div style="text-align: center; margin-top: 20px;">
+                <div class="audio-controls">
                     <button id="playExampleOriginal" class="btn btn-primary" disabled>▶️ Play Original</button>
                     <button id="playExampleFiltered" class="btn btn-primary" disabled>▶️ Play Filtered</button>
                 </div>
                 <div id="exampleStatus" class="status-message hidden"></div>
-                <div class="status-message info">
-                    Audio source: <span id="exampleAudioSource">Pink Noise</span> | Duration: <span id="exampleDuration">3</span> seconds
+                <div class="status-message info text-sm text-center">
+                    Audio source: <span id="exampleAudioSource">Pink Noise</span> | Duration: <span id="exampleDuration">3</span> seconds<br>
+                    <span id="exampleSourceNote">Using the audio sample duration setting</span>
                 </div>
             </div>
 
-            <div class="info-box success">
-                <h3>📊 Scoring:</h3>
-                <ul>
+            <div class="card success">
+                <h3>📊 Scoring</h3>
+                <ul style="margin-left: var(--space-5);">
                     <li><strong>Random Mode - Lowpass/Highpass:</strong> 1 point for correct type</li>
                     <li><strong>Random Mode - Notch/Bandpass:</strong> 1 point for correct type AND correct frequency</li>
                     <li><strong>Random Mode - Notch/Bandpass:</strong> 0.5 points for correct type but wrong frequency</li>
@@ -516,39 +805,45 @@
                 </ul>
             </div>
 
-            <div class="info-box info">
-                <h3>⚙️ Options:</h3>
-                <label class="checkbox-item">
-                    <input type="checkbox" id="showTypeAnswers">
-                    <span>Show correct filter type if your guess is wrong (in Random mode)</span>
-                </label>
-                <label class="checkbox-item">
-                    <input type="checkbox" id="showDetails">
-                    <span>Show filter details (parameters) after each guess</span>
-                </label>
+            <div class="card info">
+                <h3>⚙️ Options</h3>
+                <div class="checkbox-group">
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="showTypeAnswers">
+                        <span>Show correct filter type if your guess is wrong (in Random mode)</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="showDetails">
+                        <span>Show filter details (parameters) after each guess</span>
+                    </label>
+                </div>
             </div>
 
-            <div style="text-align: center; margin: 30px 0;">
+            <div class="text-center">
                 <button id="startButton" class="btn btn-primary">🚀 Start Quiz (10 Questions)</button>
             </div>
         </div>
 
-        <div id="quiz" class="question-section hidden">
+        <!-- Quiz Section -->
+        <div id="quiz" class="hidden">
             <div class="progress-container">
                 <div id="progressBar" class="progress-bar"></div>
-                <div class="progress-text">
-                    Question <span id="questionNum">1</span>/10
-                </div>
+            </div>
+            <div class="progress-text">
+                Question <span id="questionNum">1</span>/10
             </div>
 
             <div class="score-display">
-                Score: <span id="currentScore">0</span>/10
+                <div class="score">
+                    <span id="currentScore">0</span>/10
+                </div>
+                <div class="text-sm">Current Score</div>
             </div>
 
-            <div class="question-box">
+            <div class="card">
                 <h3 id="questionTitle">Question 1</h3>
 
-                <div id="playSection">
+                <div id="playSection" class="audio-controls">
                     <button id="playOriginal" class="btn btn-primary">▶️ Play Original</button>
                     <button id="playFiltered" class="btn btn-primary">▶️ Play Filtered</button>
                 </div>
@@ -558,155 +853,61 @@
                     <div id="filterTypeSection">
                         <h4>What type of filter was applied?</h4>
                         <div class="grid grid-auto" id="filterTypes">
-                            <button class="btn" data-type="Lowpass">Lowpass</button>
-                            <button class="btn" data-type="Highpass">Highpass</button>
-                            <button class="btn" data-type="Notch">Notch</button>
-                            <button class="btn" data-type="Bandpass">Bandpass</button>
+                            <button class="btn btn-secondary" data-type="Lowpass">Lowpass</button>
+                            <button class="btn btn-secondary" data-type="Highpass">Highpass</button>
+                            <button class="btn btn-secondary" data-type="Notch">Notch</button>
+                            <button class="btn btn-secondary" data-type="Bandpass">Bandpass</button>
                         </div>
                     </div>
 
                     <div id="frequencySection" class="hidden">
                         <h4>What's the center frequency?</h4>
                         <div class="grid grid-freq" id="frequencies">
-                            <button class="btn" data-freq="100">100 Hz (Low)</button>
-                            <button class="btn" data-freq="600">600 Hz (Mid-Low)</button>
-                            <button class="btn" data-freq="1500">1500 Hz (Mid)</button>
-                            <button class="btn" data-freq="5000">5000 Hz (Mid-High)</button>
-                            <button class="btn" data-freq="8000">8000 Hz (High)</button>
-                            <button class="btn" data-freq="10000">10000 Hz (Very High)</button>
+                            <button class="btn btn-secondary" data-freq="100">100 Hz (Low)</button>
+                            <button class="btn btn-secondary" data-freq="600">600 Hz (Mid-Low)</button>
+                            <button class="btn btn-secondary" data-freq="1500">1500 Hz (Mid)</button>
+                            <button class="btn btn-secondary" data-freq="5000">5000 Hz (Mid-High)</button>
+                            <button class="btn btn-secondary" data-freq="8000">8000 Hz (High)</button>
+                            <button class="btn btn-secondary" data-freq="10000">10000 Hz (Very High)</button>
                         </div>
                     </div>
 
-                    <div id="focusModeInfo" class="hidden info-box warning">
+                    <div id="focusModeInfo" class="hidden status-message warning">
                         Filter type: <strong><span id="givenFilterType"></span></strong> - Just identify the frequency!
                     </div>
 
-                    <button id="submitAnswer" class="btn btn-primary" disabled>Submit Answer</button>
+                    <div class="text-center">
+                        <button id="submitAnswer" class="btn btn-primary" disabled>Submit Answer</button>
+                    </div>
                 </div>
 
                 <div id="feedback" class="feedback hidden"></div>
-                <button id="nextQuestion" class="btn btn-primary hidden">Next Question</button>
+                <div class="text-center">
+                    <button id="nextQuestion" class="btn btn-primary hidden">Next Question</button>
+                </div>
             </div>
         </div>
 
-        <div id="results" class="results-section hidden">
+        <!-- Results Section -->
+        <div id="results" class="hidden">
             <div class="score-display">
                 <h2>🎉 Quiz Complete!</h2>
                 <div id="finalScore"></div>
-                <div id="performanceAnalysis"></div>
             </div>
-            <button id="restartButton" class="btn btn-primary">🔄 Take Quiz Again</button>
+            <div id="performanceAnalysis"></div>
+            <div class="text-center">
+                <button id="restartButton" class="btn btn-primary">🔄 Take Quiz Again</button>
+            </div>
         </div>
     </div>
 
     <script>
-        class HearingTestQuiz {
+        // Audio Processing Module
+        class AudioProcessor {
             constructor() {
                 this.audioContext = null;
-                this.currentQuestion = 0;
-                this.score = 0;
-                this.questions = [];
-                this.selectedFilterType = null;
-                this.selectedFrequency = null;
-                this.showTypeAnswers = false;
-                this.showDetails = false;
-                this.customAudioBuffer = null;
-                this.useCustomAudio = false;
-                this.useFixedFilter = false;
-                this.fixedFilterType = 'Notch';
-                this.userDuration = 3.0;
-                this.currentSourceNode = null;
-                this.exampleSelectedFilterType = null;
-                this.exampleSelectedFrequency = null;
-                this.exampleOriginalAudioData = null;
-                this.questionResults = [];
-
-                // Constants
                 this.FS = 44100;
                 this.NOISE_AMPLITUDE = 0.4;
-                this.NUM_QUESTIONS = 10;
-                this.FILTER_TYPES = ["Lowpass", "Highpass", "Notch", "Bandpass"];
-                this.LOWPASS_FREQ = 5000;
-                this.HIGHPASS_FREQ = 150;
-                this.PEAK_EQ_GAIN_DB = 9.0;
-                this.PEAK_EQ_BW_OCT = 1.6;
-                this.NOTCH_BAND_CHOICES = {
-                    100: "Low", 600: "Mid-Low", 1500: "Mid",
-                    5000: "Mid-High", 8000: "High", 10000: "Very High"
-                };
-                this.NOTCH_BAND_FREQ_LIST = [100, 600, 1500, 5000, 8000, 10000];
-
-                this.init();
-            }
-
-            init() {
-                this.setupEventListeners();
-                this.updateUI();
-                this.setupFileUpload();
-            }
-
-            setupEventListeners() {
-                // Setup section
-                document.getElementById('sampleDuration').addEventListener('change', () => this.onDurationChange());
-                document.querySelectorAll('input[name="audioSource"]').forEach(input => {
-                    input.addEventListener('change', () => this.onAudioSourceChange());
-                });
-                document.querySelectorAll('input[name="filterMode"]').forEach(input => {
-                    input.addEventListener('change', () => this.onFilterModeChange());
-                });
-                document.getElementById('fixedFilterType').addEventListener('change', () => this.onFixedFilterTypeChange());
-                document.getElementById('audioFile').addEventListener('change', () => this.handleAudioFile());
-                document.getElementById('startButton').addEventListener('click', () => this.startQuiz());
-
-                // Example section
-                document.querySelectorAll('#exampleFilterTypes .btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => this.selectExampleFilterType(e.target.dataset.type));
-                });
-                document.querySelectorAll('#exampleFrequencies .btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => this.selectExampleFrequency(parseInt(e.target.dataset.freq)));
-                });
-                document.getElementById('playExampleOriginal').addEventListener('click', () => this.playExampleOriginal());
-                document.getElementById('playExampleFiltered').addEventListener('click', () => this.playExampleFiltered());
-
-                // Quiz section
-                document.getElementById('playOriginal').addEventListener('click', () => this.playOriginal());
-                document.getElementById('playFiltered').addEventListener('click', () => this.playFiltered());
-                document.querySelectorAll('#filterTypes .btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => this.selectFilterType(e.target.dataset.type));
-                });
-                document.querySelectorAll('#frequencies .btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => this.selectFrequency(parseInt(e.target.dataset.freq)));
-                });
-                document.getElementById('submitAnswer').addEventListener('click', () => this.submitAnswer());
-                document.getElementById('nextQuestion').addEventListener('click', () => this.nextQuestion());
-                document.getElementById('restartButton').addEventListener('click', () => this.restartQuiz());
-            }
-
-            setupFileUpload() {
-                const uploadArea = document.querySelector('.file-upload-area');
-                
-                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                    uploadArea.addEventListener(eventName, (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                    });
-                });
-
-                ['dragenter', 'dragover'].forEach(eventName => {
-                    uploadArea.addEventListener(eventName, () => uploadArea.classList.add('dragover'));
-                });
-
-                ['dragleave', 'drop'].forEach(eventName => {
-                    uploadArea.addEventListener(eventName, () => uploadArea.classList.remove('dragover'));
-                });
-
-                uploadArea.addEventListener('drop', (e) => {
-                    const files = e.dataTransfer.files;
-                    if (files.length > 0) {
-                        document.getElementById('audioFile').files = files;
-                        this.handleAudioFile();
-                    }
-                });
             }
 
             async initAudioContext() {
@@ -716,24 +917,10 @@
                 if (this.audioContext.state === 'suspended') {
                     await this.audioContext.resume();
                 }
+                return this.audioContext;
             }
 
-            showStatus(elementId, message, type = 'info', duration = 0) {
-                const element = document.getElementById(elementId);
-                element.className = `status-message ${type}`;
-                element.innerHTML = message;
-                element.classList.remove('hidden');
-                
-                if (duration > 0) {
-                    setTimeout(() => element.classList.add('hidden'), duration);
-                }
-            }
-
-            hideStatus(elementId) {
-                document.getElementById(elementId).classList.add('hidden');
-            }
-
-            generatePinkNoise(duration, sampleRate) {
+            generatePinkNoise(duration, sampleRate = this.FS) {
                 const samples = Math.floor(duration * sampleRate);
                 const nSources = 16;
                 const maxVal = 1.0 / nSources;
@@ -781,8 +968,7 @@
             }
 
             async applyFilter(audioData, filterType, frequency, duration) {
-                await this.initAudioContext();
-
+                const context = await this.initAudioContext();
                 const numberOfChannels = 1;
                 const bufferLength = Math.floor(duration * this.FS);
                 const dataToUse = new Float32Array(bufferLength);
@@ -810,32 +996,46 @@
             }
 
             configureFilter(filter, filterType, frequency) {
+                const LOWPASS_FREQ = 5000;
+                const HIGHPASS_FREQ = 150;
+                const PEAK_EQ_GAIN_DB = 9.0;
+                const PEAK_EQ_BW_OCT = 1.6;
+
                 switch (filterType) {
                     case 'Lowpass':
                         filter.type = 'lowpass';
-                        filter.frequency.value = frequency;
+                        filter.frequency.value = LOWPASS_FREQ;
                         filter.Q.value = Math.SQRT1_2;
                         break;
                     case 'Highpass':
                         filter.type = 'highpass';
-                        filter.frequency.value = frequency;
+                        filter.frequency.value = HIGHPASS_FREQ;
                         filter.Q.value = Math.SQRT1_2;
                         break;
                     case 'Notch':
                         filter.type = 'peaking';
                         filter.frequency.value = frequency;
-                        filter.gain.value = -this.PEAK_EQ_GAIN_DB;
-                        filter.Q.value = frequency / (frequency * (Math.pow(2, this.PEAK_EQ_BW_OCT / 2) - Math.pow(2, -this.PEAK_EQ_BW_OCT / 2)));
+                        filter.gain.value = -PEAK_EQ_GAIN_DB;
+                        filter.Q.value = frequency / (frequency * (Math.pow(2, PEAK_EQ_BW_OCT / 2) - Math.pow(2, -PEAK_EQ_BW_OCT / 2)));
                         break;
                     case 'Bandpass':
                         filter.type = 'peaking';
                         filter.frequency.value = frequency;
-                        filter.gain.value = this.PEAK_EQ_GAIN_DB;
-                        filter.Q.value = frequency / (frequency * (Math.pow(2, this.PEAK_EQ_BW_OCT / 2) - Math.pow(2, -this.PEAK_EQ_BW_OCT / 2)));
+                        filter.gain.value = PEAK_EQ_GAIN_DB;
+                        filter.Q.value = frequency / (frequency * (Math.pow(2, PEAK_EQ_BW_OCT / 2) - Math.pow(2, -PEAK_EQ_BW_OCT / 2)));
                         break;
                     default:
                         throw new Error(`Unknown filter type: ${filterType}`);
                 }
+            }
+        }
+
+        // Audio Player Module
+        class AudioPlayer {
+            constructor(audioProcessor) {
+                this.audioProcessor = audioProcessor;
+                this.currentSourceNode = null;
+                this.isPlaying = false;
             }
 
             async stopCurrentAudio() {
@@ -847,17 +1047,25 @@
                     }
                     this.currentSourceNode = null;
                 }
+                this.isPlaying = false;
             }
 
-            async playAudioBuffer(audioBuffer) {
-                await this.initAudioContext();
+            async playAudioBuffer(audioBuffer, startTime = 0, duration = null) {
+                const context = await this.audioProcessor.initAudioContext();
                 await this.stopCurrentAudio();
 
-                const source = this.audioContext.createBufferSource();
+                const source = context.createBufferSource();
                 source.buffer = audioBuffer;
-                source.connect(this.audioContext.destination);
+                source.connect(context.destination);
                 this.currentSourceNode = source;
-                source.start();
+                
+                if (duration !== null) {
+                    source.start(0, startTime, duration);
+                } else {
+                    source.start(0, startTime);
+                }
+
+                this.isPlaying = true;
 
                 return new Promise(resolve => {
                     source.onended = () => {
@@ -865,6 +1073,7 @@
                         if (this.currentSourceNode === source) {
                             this.currentSourceNode = null;
                         }
+                        this.isPlaying = false;
                         resolve();
                     };
                     source.onerror = (e) => {
@@ -872,11 +1081,620 @@
                         if (this.currentSourceNode === source) {
                             this.currentSourceNode = null;
                         }
+                        this.isPlaying = false;
                         resolve();
                     };
                 });
             }
 
+            async playAudioData(audioData, sampleRate = 44100) {
+                const context = await this.audioProcessor.initAudioContext();
+                const tempBuffer = context.createBuffer(1, audioData.length, sampleRate);
+                tempBuffer.getChannelData(0).set(audioData);
+                await this.playAudioBuffer(tempBuffer);
+            }
+        }
+
+        // UI Manager Module
+        class UIManager {
+            constructor() {
+                this.elements = {};
+                this.initElements();
+            }
+
+            initElements() {
+                // Cache frequently used elements
+                const elementIds = [
+                    'setup', 'quiz', 'results', 'fileSection', 'segmentSelector',
+                    'randomSegmentInfo', 'durationSection', 'fixedFilterSection',
+                    'exampleFrequencySection', 'filterTypeSection', 'frequencySection',
+                    'focusModeInfo', 'feedback', 'audioStatus', 'fileStatus', 'exampleStatus'
+                ];
+
+                elementIds.forEach(id => {
+                    this.elements[id] = document.getElementById(id);
+                });
+            }
+
+            show(elementId) {
+                const element = this.elements[elementId] || document.getElementById(elementId);
+                if (element) element.classList.remove('hidden');
+            }
+
+            hide(elementId) {
+                const element = this.elements[elementId] || document.getElementById(elementId);
+                if (element) element.classList.add('hidden');
+            }
+
+            setText(elementId, text) {
+                const element = document.getElementById(elementId);
+                if (element) element.textContent = text;
+            }
+
+            setHTML(elementId, html) {
+                const element = document.getElementById(elementId);
+                if (element) element.innerHTML = html;
+            }
+
+            showStatus(elementId, message, type = 'info', duration = 0) {
+                const element = document.getElementById(elementId);
+                if (!element) return;
+
+                element.className = `status-message ${type}`;
+                element.innerHTML = message;
+                element.classList.remove('hidden');
+                
+                if (duration > 0) {
+                    setTimeout(() => element.classList.add('hidden'), duration);
+                }
+            }
+
+            updateButtonSelection(containerSelector, dataAttribute, value) {
+                document.querySelectorAll(`${containerSelector} .btn`).forEach(btn => {
+                    btn.classList.remove('selected');
+                    if (btn.getAttribute(dataAttribute) === value) {
+                        btn.classList.add('selected');
+                    }
+                });
+            }
+
+            clearButtonSelections(containerSelector) {
+                document.querySelectorAll(`${containerSelector} .btn`).forEach(btn => {
+                    btn.classList.remove('selected');
+                });
+            }
+
+            setButtonsDisabled(selector, disabled) {
+                document.querySelectorAll(selector).forEach(btn => {
+                    btn.disabled = disabled;
+                });
+            }
+        }
+
+        // File Manager Module
+        class FileManager {
+            constructor(audioProcessor) {
+                this.audioProcessor = audioProcessor;
+                this.customAudioBuffer = null;
+                this.selectedAudioSegment = null;
+                this.segmentStartTime = 0;
+                this.segmentEndTime = 3;
+                this.waveformData = null;
+                this.isPlaying = false;
+                this.currentPlayTime = 0;
+                this.playbackTimer = null;
+            }
+
+            async processAudioFile(file) {
+                const context = await this.audioProcessor.initAudioContext();
+                
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    
+                    reader.onload = async (e) => {
+                        try {
+                            const originalBuffer = await context.decodeAudioData(e.target.result);
+                            const durationInSeconds = originalBuffer.duration;
+                            const resampledLength = Math.floor(durationInSeconds * this.audioProcessor.FS);
+
+                            const offlineContext = new OfflineAudioContext(
+                                originalBuffer.numberOfChannels, 
+                                resampledLength, 
+                                this.audioProcessor.FS
+                            );
+                            
+                            const source = offlineContext.createBufferSource();
+                            source.buffer = originalBuffer;
+                            source.connect(offlineContext.destination);
+                            source.start();
+
+                            const resampledBuffer = await offlineContext.startRendering();
+
+                            if (resampledBuffer.numberOfChannels > 1) {
+                                const monoBuffer = context.createBuffer(1, resampledBuffer.length, this.audioProcessor.FS);
+                                monoBuffer.getChannelData(0).set(resampledBuffer.getChannelData(0));
+                                this.customAudioBuffer = monoBuffer;
+                            } else {
+                                this.customAudioBuffer = resampledBuffer;
+                            }
+
+                            resolve(this.customAudioBuffer);
+                        } catch (error) {
+                            reject(error);
+                        }
+                    };
+
+                    reader.onerror = reject;
+                    reader.readAsArrayBuffer(file);
+                });
+            }
+
+            generateWaveform() {
+                if (!this.customAudioBuffer) return;
+
+                const canvas = document.getElementById('waveformCanvas');
+                const ctx = canvas.getContext('2d');
+                const audioData = this.customAudioBuffer.getChannelData(0);
+                
+                // Set canvas size with device pixel ratio
+                const rect = canvas.getBoundingClientRect();
+                canvas.width = rect.width * window.devicePixelRatio;
+                canvas.height = rect.height * window.devicePixelRatio;
+                ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+                
+                const width = rect.width;
+                const height = rect.height;
+                
+                ctx.clearRect(0, 0, width, height);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.lineWidth = 1;
+                
+                // Downsample for visualization
+                const step = Math.floor(audioData.length / width);
+                const centerY = height / 2;
+                
+                ctx.beginPath();
+                for (let i = 0; i < width; i++) {
+                    const start = i * step;
+                    const end = Math.min(start + step, audioData.length);
+                    
+                    let min = 0, max = 0;
+                    for (let j = start; j < end; j++) {
+                        min = Math.min(min, audioData[j]);
+                        max = Math.max(max, audioData[j]);
+                    }
+                    
+                    const minY = centerY + (min * centerY * 0.8);
+                    const maxY = centerY + (max * centerY * 0.8);
+                    
+                    ctx.moveTo(i, minY);
+                    ctx.lineTo(i, maxY);
+                }
+                ctx.stroke();
+                
+                this.waveformData = { width, audioLength: audioData.length };
+            }
+
+            updateSelectionOverlay() {
+                if (!this.customAudioBuffer || !this.waveformData) return;
+
+                const overlay = document.getElementById('selectionOverlay');
+                const duration = this.customAudioBuffer.duration;
+                
+                const startPercent = (this.segmentStartTime / duration) * 100;
+                const endPercent = (this.segmentEndTime / duration) * 100;
+                const widthPercent = endPercent - startPercent;
+                
+                overlay.style.left = `${startPercent}%`;
+                overlay.style.width = `${widthPercent}%`;
+                overlay.classList.remove('hidden');
+            }
+
+            extractSelectedSegment() {
+                if (!this.customAudioBuffer) return;
+
+                const startSample = Math.floor(this.segmentStartTime * this.audioProcessor.FS);
+                const endSample = Math.floor(this.segmentEndTime * this.audioProcessor.FS);
+                const segmentLength = endSample - startSample;
+                
+                if (segmentLength > 0) {
+                    const audioData = this.customAudioBuffer.getChannelData(0);
+                    this.selectedAudioSegment = audioData.slice(startSample, endSample);
+                }
+            }
+
+            getRandomSegment(duration) {
+                if (!this.customAudioBuffer) return null;
+
+                const numSamples = Math.floor(duration * this.audioProcessor.FS);
+                const maxStartSample = Math.max(0, this.customAudioBuffer.length - numSamples);
+                const startSample = Math.floor(Math.random() * (maxStartSample + 1));
+                const endSample = Math.min(startSample + numSamples, this.customAudioBuffer.length);
+                
+                let originalData = this.customAudioBuffer.getChannelData(0).slice(startSample, endSample);
+
+                if (originalData.length < numSamples) {
+                    const paddedData = new Float32Array(numSamples);
+                    paddedData.set(originalData);
+                    originalData = paddedData;
+                }
+                
+                return originalData;
+            }
+        }
+
+        // Main Quiz Application
+        class HearingTestQuiz {
+            constructor() {
+                this.audioProcessor = new AudioProcessor();
+                this.audioPlayer = new AudioPlayer(this.audioProcessor);
+                this.uiManager = new UIManager();
+                this.fileManager = new FileManager(this.audioProcessor);
+                
+                // Quiz state
+                this.currentQuestion = 0;
+                this.score = 0;
+                this.questions = [];
+                this.questionResults = [];
+                this.selectedFilterType = null;
+                this.selectedFrequency = null;
+                
+                // Settings
+                this.showTypeAnswers = false;
+                this.showDetails = false;
+                this.useCustomAudio = false;
+                this.useRandomSegments = false;
+                this.useFixedFilter = false;
+                this.fixedFilterType = 'Notch';
+                this.userDuration = 3.0;
+                
+                // Example player state
+                this.exampleSelectedFilterType = null;
+                this.exampleSelectedFrequency = null;
+                this.exampleOriginalAudioData = null;
+                
+                // Constants
+                this.NUM_QUESTIONS = 10;
+                this.FILTER_TYPES = ["Lowpass", "Highpass", "Notch", "Bandpass"];
+                this.LOWPASS_FREQ = 5000;
+                this.HIGHPASS_FREQ = 150;
+                this.PEAK_EQ_GAIN_DB = 9.0;
+                this.PEAK_EQ_BW_OCT = 1.6;
+                this.NOTCH_BAND_CHOICES = {
+                    100: "Low", 600: "Mid-Low", 1500: "Mid",
+                    5000: "Mid-High", 8000: "High", 10000: "Very High"
+                };
+                this.NOTCH_BAND_FREQ_LIST = [100, 600, 1500, 5000, 8000, 10000];
+
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.updateUI();
+                this.setupFileUpload();
+                this.setupSegmentSelector();
+            }
+
+            setupEventListeners() {
+                // Setup section
+                document.getElementById('sampleDuration')?.addEventListener('change', () => this.onDurationChange());
+                
+                document.querySelectorAll('input[name="audioSource"]').forEach(input => {
+                    input.addEventListener('change', () => this.onAudioSourceChange());
+                });
+                
+                document.querySelectorAll('input[name="filterMode"]').forEach(input => {
+                    input.addEventListener('change', () => this.onFilterModeChange());
+                });
+                
+                document.getElementById('fixedFilterType')?.addEventListener('change', () => this.onFixedFilterTypeChange());
+                document.getElementById('audioFile')?.addEventListener('change', () => this.handleAudioFile());
+                document.getElementById('startButton')?.addEventListener('click', () => this.startQuiz());
+
+                // Example section
+                document.querySelectorAll('#exampleFilterTypes .btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => this.selectExampleFilterType(e.target.dataset.type));
+                });
+                
+                document.querySelectorAll('#exampleFrequencies .btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => this.selectExampleFrequency(parseInt(e.target.dataset.freq)));
+                });
+                
+                document.getElementById('playExampleOriginal')?.addEventListener('click', () => this.playExampleOriginal());
+                document.getElementById('playExampleFiltered')?.addEventListener('click', () => this.playExampleFiltered());
+
+                // Quiz section
+                document.getElementById('playOriginal')?.addEventListener('click', () => this.playOriginal());
+                document.getElementById('playFiltered')?.addEventListener('click', () => this.playFiltered());
+                
+                document.querySelectorAll('#filterTypes .btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => this.selectFilterType(e.target.dataset.type));
+                });
+                
+                document.querySelectorAll('#frequencies .btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => this.selectFrequency(parseInt(e.target.dataset.freq)));
+                });
+                
+                document.getElementById('submitAnswer')?.addEventListener('click', () => this.submitAnswer());
+                document.getElementById('nextQuestion')?.addEventListener('click', () => this.nextQuestion());
+                document.getElementById('restartButton')?.addEventListener('click', () => this.restartQuiz());
+
+                // Segment selector
+                document.getElementById('playFullAudio')?.addEventListener('click', () => this.playFullAudio());
+                document.getElementById('pauseAudio')?.addEventListener('click', () => this.pauseAudio());
+                document.getElementById('playSelection')?.addEventListener('click', () => this.playSelectedSegment());
+                document.getElementById('resetSelection')?.addEventListener('click', () => this.resetSelection());
+                
+                document.getElementById('startTime')?.addEventListener('input', () => this.updateSelectionFromInputs());
+                document.getElementById('endTime')?.addEventListener('input', () => this.updateSelectionFromInputs());
+            }
+
+            setupFileUpload() {
+                const uploadArea = document.querySelector('.file-upload-area');
+                if (!uploadArea) return;
+                
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    uploadArea.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    });
+                });
+
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    uploadArea.addEventListener(eventName, () => uploadArea.classList.add('dragover'));
+                });
+
+                ['dragleave', 'drop'].forEach(eventName => {
+                    uploadArea.addEventListener(eventName, () => uploadArea.classList.remove('dragover'));
+                });
+
+                uploadArea.addEventListener('drop', (e) => {
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        document.getElementById('audioFile').files = files;
+                        this.handleAudioFile();
+                    }
+                });
+            }
+
+            setupSegmentSelector() {
+                const canvas = document.getElementById('waveformCanvas');
+                if (!canvas) return;
+
+                canvas.addEventListener('mousedown', (e) => this.startWaveformSelection(e));
+                canvas.addEventListener('mousemove', (e) => this.updateWaveformSelection(e));
+                canvas.addEventListener('mouseup', () => this.endWaveformSelection());
+            }
+
+            // Event handlers
+            onDurationChange() {
+                const selectedDuration = parseFloat(document.getElementById('sampleDuration').value);
+                
+                if (this.useRandomSegments || !this.useCustomAudio || !this.fileManager.selectedAudioSegment) {
+                    this.userDuration = selectedDuration;
+                }
+                
+                if (this.useRandomSegments) {
+                    this.uiManager.setText('randomDuration', selectedDuration);
+                }
+                
+                this.uiManager.setText('exampleDuration', this.userDuration);
+                this.prepareExampleAudio();
+                this.updateExamplePlayButtonState();
+            }
+
+            onAudioSourceChange() {
+                const audioSourceValue = document.querySelector('input[name="audioSource"]:checked').value;
+                this.useCustomAudio = audioSourceValue === 'file' || audioSourceValue === 'random';
+                this.useRandomSegments = audioSourceValue === 'random';
+
+                if (this.useCustomAudio) {
+                    this.uiManager.show('fileSection');
+                    
+                    if (this.useRandomSegments) {
+                        this.uiManager.hide('segmentSelector');
+                        this.uiManager.show('randomSegmentInfo');
+                        this.uiManager.show('durationSection');
+                        document.getElementById('startButton').disabled = !this.fileManager.customAudioBuffer;
+                        this.uiManager.setText('randomDuration', parseFloat(document.getElementById('sampleDuration').value));
+                        this.userDuration = parseFloat(document.getElementById('sampleDuration').value);
+                    } else {
+                        this.uiManager.hide('randomSegmentInfo');
+                        this.uiManager.hide('durationSection');
+                        document.getElementById('startButton').disabled = !this.fileManager.selectedAudioSegment;
+                    }
+                } else {
+                    this.uiManager.hide('fileSection');
+                    this.uiManager.hide('segmentSelector');
+                    this.uiManager.hide('randomSegmentInfo');
+                    this.uiManager.show('durationSection');
+                    this.uiManager.hide('fileStatus');
+                    document.getElementById('startButton').disabled = false;
+                    this.userDuration = parseFloat(document.getElementById('sampleDuration').value);
+                }
+
+                this.prepareExampleAudio();
+                this.updateExamplePlayButtonState();
+            }
+
+            onFilterModeChange() {
+                this.useFixedFilter = document.querySelector('input[name="filterMode"]:checked').value === 'fixed';
+                
+                if (this.useFixedFilter) {
+                    this.uiManager.show('fixedFilterSection');
+                    this.fixedFilterType = document.getElementById('fixedFilterType').value;
+                    this.uiManager.setText('filterTypeDisplay', this.fixedFilterType);
+                } else {
+                    this.uiManager.hide('fixedFilterSection');
+                    this.fixedFilterType = null;
+                }
+            }
+
+            onFixedFilterTypeChange() {
+                this.fixedFilterType = document.getElementById('fixedFilterType').value;
+                this.uiManager.setText('filterTypeDisplay', this.fixedFilterType);
+            }
+
+            async handleAudioFile() {
+                const fileInput = document.getElementById('audioFile');
+                const file = fileInput.files[0];
+                const startButton = document.getElementById('startButton');
+
+                this.uiManager.hide('fileStatus');
+                this.fileManager.customAudioBuffer = null;
+                this.fileManager.selectedAudioSegment = null;
+                startButton.disabled = true;
+
+                this.uiManager.hide('segmentSelector');
+                this.updateExamplePlayButtonState();
+
+                if (!file) {
+                    this.updateExamplePlayButtonState();
+                    return;
+                }
+
+                try {
+                    const audioBuffer = await this.fileManager.processAudioFile(file);
+                    
+                    if (audioBuffer.duration < 0.5) {
+                        this.uiManager.showStatus('fileStatus', 
+                            `File is too short (${audioBuffer.duration.toFixed(2)}s). Please select a file at least 0.5 seconds long.`, 
+                            'error'
+                        );
+                        this.fileManager.customAudioBuffer = null;
+                    } else {
+                        this.uiManager.showStatus('fileStatus', 
+                            `✅ File loaded successfully! Duration: ${audioBuffer.duration.toFixed(2)}s`, 
+                            'success'
+                        );
+                        
+                        const audioSourceValue = document.querySelector('input[name="audioSource"]:checked').value;
+                        if (audioSourceValue === 'file') {
+                            this.uiManager.show('segmentSelector');
+                            this.fileManager.segmentStartTime = 0;
+                            const defaultDuration = parseFloat(document.getElementById('sampleDuration').value);
+                            this.fileManager.segmentEndTime = Math.min(defaultDuration, audioBuffer.duration);
+                            this.updateSelectionFromTimes();
+                            this.fileManager.generateWaveform();
+                            startButton.disabled = false;
+                        } else if (audioSourceValue === 'random') {
+                            startButton.disabled = false;
+                        }
+                    }
+
+                    this.updateExamplePlayButtonState();
+                } catch (error) {
+                    console.error("Error processing audio file:", error);
+                    this.uiManager.showStatus('fileStatus', `Error processing audio file: ${error.message}`, 'error');
+                    this.fileManager.customAudioBuffer = null;
+                    this.updateExamplePlayButtonState();
+                }
+            }
+
+            // Segment selection methods
+            startWaveformSelection(e) {
+                if (!this.fileManager.customAudioBuffer) return;
+                
+                this.fileManager.isSelecting = true;
+                const rect = e.target.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const percent = x / rect.width;
+                const time = percent * this.fileManager.customAudioBuffer.duration;
+                
+                this.fileManager.segmentStartTime = Math.max(0, time);
+                this.updateSelectionFromTimes();
+            }
+
+            updateWaveformSelection(e) {
+                if (!this.fileManager.isSelecting || !this.fileManager.customAudioBuffer) return;
+                
+                const rect = e.target.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const percent = x / rect.width;
+                const time = percent * this.fileManager.customAudioBuffer.duration;
+                
+                this.fileManager.segmentEndTime = Math.min(
+                    this.fileManager.customAudioBuffer.duration, 
+                    Math.max(this.fileManager.segmentStartTime + 0.1, time)
+                );
+                this.updateSelectionFromTimes();
+            }
+
+            endWaveformSelection() {
+                this.fileManager.isSelecting = false;
+            }
+
+            updateSelectionFromInputs() {
+                const startTime = parseFloat(document.getElementById('startTime').value) || 0;
+                const endTime = parseFloat(document.getElementById('endTime').value) || 0;
+                
+                if (this.fileManager.customAudioBuffer) {
+                    this.fileManager.segmentStartTime = Math.max(0, Math.min(startTime, this.fileManager.customAudioBuffer.duration));
+                    this.fileManager.segmentEndTime = Math.max(
+                        this.fileManager.segmentStartTime + 0.1, 
+                        Math.min(endTime, this.fileManager.customAudioBuffer.duration)
+                    );
+                } else {
+                    this.fileManager.segmentStartTime = Math.max(0, startTime);
+                    this.fileManager.segmentEndTime = Math.max(this.fileManager.segmentStartTime + 0.1, endTime);
+                }
+                
+                this.updateSelectionFromTimes();
+            }
+
+            updateSelectionFromTimes() {
+                document.getElementById('startTime').value = this.fileManager.segmentStartTime.toFixed(1);
+                document.getElementById('endTime').value = this.fileManager.segmentEndTime.toFixed(1);
+                
+                const duration = this.fileManager.segmentEndTime - this.fileManager.segmentStartTime;
+                this.uiManager.setText('selectedDuration', duration.toFixed(1));
+                
+                document.getElementById('playSelection').disabled = duration < 0.1;
+                
+                const audioSourceValue = document.querySelector('input[name="audioSource"]:checked').value;
+                if (audioSourceValue === 'file') {
+                    this.userDuration = duration;
+                }
+                
+                this.fileManager.updateSelectionOverlay();
+                this.fileManager.extractSelectedSegment();
+                this.updateExamplePlayButtonState();
+            }
+
+            resetSelection() {
+                if (this.fileManager.customAudioBuffer) {
+                    this.fileManager.segmentStartTime = 0;
+                    const defaultDuration = parseFloat(document.getElementById('sampleDuration').value);
+                    this.fileManager.segmentEndTime = Math.min(defaultDuration, this.fileManager.customAudioBuffer.duration);
+                } else {
+                    this.fileManager.segmentStartTime = 0;
+                    this.fileManager.segmentEndTime = parseFloat(document.getElementById('sampleDuration').value);
+                }
+                this.updateSelectionFromTimes();
+            }
+
+            async playFullAudio() {
+                if (!this.fileManager.customAudioBuffer) return;
+                await this.audioPlayer.playAudioBuffer(this.fileManager.customAudioBuffer);
+            }
+
+            async playSelectedSegment() {
+                if (!this.fileManager.customAudioBuffer || !this.fileManager.selectedAudioSegment) return;
+                
+                const duration = this.fileManager.segmentEndTime - this.fileManager.segmentStartTime;
+                await this.audioPlayer.playAudioBuffer(
+                    this.fileManager.customAudioBuffer, 
+                    this.fileManager.segmentStartTime, 
+                    duration
+                );
+            }
+
+            async pauseAudio() {
+                await this.audioPlayer.stopCurrentAudio();
+            }
+
+            // Quiz generation and management
             generateQuestion() {
                 let filterType, frequency, label, details;
 
@@ -915,22 +1733,25 @@
                         throw new Error(`Unknown filter type: ${filterType}`);
                 }
 
-                const numSamples = Math.floor(this.userDuration * this.FS);
                 let originalAudioData;
 
-                if (this.useCustomAudio && this.customAudioBuffer) {
-                    const maxStartSample = Math.max(0, this.customAudioBuffer.length - numSamples);
-                    const startSample = Math.floor(Math.random() * (maxStartSample + 1));
-                    const endSample = Math.min(startSample + numSamples, this.customAudioBuffer.length);
-                    originalAudioData = this.customAudioBuffer.getChannelData(0).slice(startSample, endSample);
-
-                    if (originalAudioData.length < numSamples) {
-                        const paddedData = new Float32Array(numSamples);
-                        paddedData.set(originalAudioData);
-                        originalAudioData = paddedData;
+                if (this.useCustomAudio && this.useRandomSegments && this.fileManager.customAudioBuffer) {
+                    originalAudioData = this.fileManager.getRandomSegment(this.userDuration);
+                } else if (this.useCustomAudio && !this.useRandomSegments && this.fileManager.selectedAudioSegment) {
+                    const numSamples = Math.floor(this.userDuration * this.audioProcessor.FS);
+                    
+                    if (this.fileManager.selectedAudioSegment.length >= numSamples) {
+                        originalAudioData = this.fileManager.selectedAudioSegment.slice(0, numSamples);
+                    } else {
+                        originalAudioData = new Float32Array(numSamples);
+                        let sourceIndex = 0;
+                        for (let i = 0; i < numSamples; i++) {
+                            originalAudioData[i] = this.fileManager.selectedAudioSegment[sourceIndex % this.fileManager.selectedAudioSegment.length];
+                            sourceIndex++;
+                        }
                     }
                 } else {
-                    originalAudioData = this.generatePinkNoise(this.userDuration, this.FS);
+                    originalAudioData = this.audioProcessor.generatePinkNoise(this.userDuration);
                 }
 
                 return {
@@ -941,23 +1762,47 @@
             }
 
             async startQuiz() {
-                await this.initAudioContext();
-                await this.stopCurrentAudio();
+                await this.audioPlayer.stopCurrentAudio();
 
                 this.userDuration = parseFloat(document.getElementById('sampleDuration').value);
                 this.showTypeAnswers = document.getElementById('showTypeAnswers').checked;
                 this.showDetails = document.getElementById('showDetails').checked;
-                this.useCustomAudio = document.querySelector('input[name="audioSource"]:checked').value === 'file';
+                
+                const audioSourceValue = document.querySelector('input[name="audioSource"]:checked').value;
+                this.useCustomAudio = audioSourceValue === 'file' || audioSourceValue === 'random';
+                this.useRandomSegments = audioSourceValue === 'random';
                 this.useFixedFilter = document.querySelector('input[name="filterMode"]:checked').value === 'fixed';
 
                 if (this.useFixedFilter) {
                     this.fixedFilterType = document.getElementById('fixedFilterType').value;
                 }
 
-                const requiredSamples = Math.floor(this.userDuration * this.FS);
-                if (this.useCustomAudio && (!this.customAudioBuffer || this.customAudioBuffer.length < requiredSamples)) {
-                    this.showStatus('audioStatus', `Please upload an audio file that is at least ${this.userDuration} seconds long.`, 'error');
-                    return;
+                if (this.useCustomAudio) {
+                    if (!this.fileManager.customAudioBuffer) {
+                        this.uiManager.showStatus('audioStatus', 'Please upload an audio file first.', 'error');
+                        return;
+                    }
+                    
+                    if (this.useRandomSegments) {
+                        const requiredSamples = Math.floor(this.userDuration * this.audioProcessor.FS);
+                        if (this.fileManager.customAudioBuffer.length < requiredSamples) {
+                            this.uiManager.showStatus('audioStatus', 
+                                `Uploaded file is too short for ${this.userDuration}-second segments. Please select a longer file or reduce the duration.`, 
+                                'error');
+                            return;
+                        }
+                    } else {
+                        if (!this.fileManager.selectedAudioSegment) {
+                            this.uiManager.showStatus('audioStatus', 'Please select an audio segment first.', 'error');
+                            return;
+                        }
+                        
+                        const selectedDuration = this.fileManager.segmentEndTime - this.fileManager.segmentStartTime;
+                        if (selectedDuration < 0.5) {
+                            this.uiManager.showStatus('audioStatus', 'Selected segment is too short. Please select at least 0.5 seconds.', 'error');
+                            return;
+                        }
+                    }
                 }
 
                 this.questions = [];
@@ -969,59 +1814,60 @@
                 this.currentQuestion = 0;
                 this.score = 0;
 
-                document.getElementById('setup').classList.add('hidden');
-                document.getElementById('quiz').classList.remove('hidden');
+                this.uiManager.hide('setup');
+                this.uiManager.show('quiz');
 
                 await this.loadQuestion();
             }
 
             async loadQuestion() {
                 const question = this.questions[this.currentQuestion];
-                await this.stopCurrentAudio();
+                await this.audioPlayer.stopCurrentAudio();
 
                 this.resetQuestionUI();
                 this.updateQuestionDisplay();
                 this.configureQuestionMode();
 
-                this.showStatus('audioStatus', '<div class="loading-spinner"></div>Loading audio...', 'info');
-                this.disablePlayButtons(true);
+                this.uiManager.showStatus('audioStatus', '<div class="loading-spinner"></div>Loading audio...', 'info');
+                this.uiManager.setButtonsDisabled('#playSection button', true);
 
                 try {
-                    question.filteredAudio = await this.applyFilter(
+                    question.filteredAudio = await this.audioProcessor.applyFilter(
                         question.originalAudio, 
                         question.filterType, 
                         question.frequency, 
                         this.userDuration
                     );
                     
-                    this.hideStatus('audioStatus');
-                    this.disablePlayButtons(false);
+                    this.uiManager.hide('audioStatus');
+                    this.uiManager.setButtonsDisabled('#playSection button', false);
                 } catch (e) {
                     console.error("Failed to render filtered audio:", e);
-                    this.showStatus('audioStatus', 'Error generating audio for this question.', 'error');
+                    this.uiManager.showStatus('audioStatus', 'Error generating audio for this question.', 'error');
                     this.showFeedback("Error generating audio for this question. Skipping.", 'incorrect');
-                    document.getElementById('nextQuestion').classList.remove('hidden');
-                    document.getElementById('guessSection').classList.add('hidden');
+                    this.uiManager.show('nextQuestion');
+                    this.uiManager.hide('guessSection');
                 }
             }
 
             resetQuestionUI() {
-                document.getElementById('feedback').classList.add('hidden');
-                document.getElementById('nextQuestion').classList.add('hidden');
+                this.uiManager.hide('feedback');
+                this.uiManager.hide('nextQuestion');
                 document.getElementById('submitAnswer').disabled = true;
-                document.getElementById('playSection').classList.remove('hidden');
-                document.getElementById('guessSection').classList.remove('hidden');
+                this.uiManager.show('playSection');
+                this.uiManager.show('guessSection');
 
                 this.selectedFilterType = null;
                 this.selectedFrequency = null;
-                this.clearSelections();
+                this.uiManager.clearButtonSelections('#filterTypes');
+                this.uiManager.clearButtonSelections('#frequencies');
             }
 
             updateQuestionDisplay() {
                 const questionNum = this.currentQuestion + 1;
-                document.getElementById('questionNum').textContent = questionNum;
-                document.getElementById('questionTitle').textContent = `Question ${questionNum}`;
-                document.getElementById('currentScore').textContent = this.score.toFixed(1);
+                this.uiManager.setText('questionNum', questionNum);
+                this.uiManager.setText('questionTitle', `Question ${questionNum}`);
+                this.uiManager.setText('currentScore', this.score.toFixed(1));
                 document.getElementById('progressBar').style.width = `${(this.currentQuestion / this.NUM_QUESTIONS) * 100}%`;
             }
 
@@ -1029,91 +1875,56 @@
                 const question = this.questions[this.currentQuestion];
                 
                 if (this.useFixedFilter) {
-                    document.getElementById('filterTypeSection').classList.add('hidden');
-                    document.getElementById('frequencySection').classList.remove('hidden');
-                    document.getElementById('focusModeInfo').classList.remove('hidden');
-                    document.getElementById('givenFilterType').textContent = question.filterType;
+                    this.uiManager.hide('filterTypeSection');
+                    this.uiManager.show('frequencySection');
+                    this.uiManager.show('focusModeInfo');
+                    this.uiManager.setText('givenFilterType', question.filterType);
                     this.selectedFilterType = question.filterType;
                 } else {
-                    document.getElementById('filterTypeSection').classList.remove('hidden');
-                    document.getElementById('frequencySection').classList.add('hidden');
-                    document.getElementById('focusModeInfo').classList.add('hidden');
+                    this.uiManager.show('filterTypeSection');
+                    this.uiManager.hide('frequencySection');
+                    this.uiManager.hide('focusModeInfo');
                     this.selectedFilterType = null;
                 }
             }
 
-            clearSelections() {
-                document.querySelectorAll('#filterTypes .btn, #frequencies .btn').forEach(btn => {
-                    btn.classList.remove('selected');
-                });
-            }
-
-            disablePlayButtons(disabled) {
-                document.querySelectorAll('#playSection button').forEach(btn => {
-                    btn.disabled = disabled;
-                });
-            }
-
             async playOriginal() {
                 const question = this.questions[this.currentQuestion];
-                await this.stopCurrentAudio();
-
-                const tempBuffer = this.audioContext.createBuffer(1, question.originalAudio.length, this.FS);
-                tempBuffer.getChannelData(0).set(question.originalAudio);
-                await this.playAudioBuffer(tempBuffer);
+                await this.audioPlayer.playAudioData(question.originalAudio);
             }
 
             async playFiltered() {
                 const question = this.questions[this.currentQuestion];
-                await this.stopCurrentAudio();
-
                 if (question.filteredAudio) {
-                    await this.playAudioBuffer(question.filteredAudio);
-                } else {
-                    console.warn("Filtered audio not yet loaded.");
+                    await this.audioPlayer.playAudioBuffer(question.filteredAudio);
                 }
             }
 
             selectFilterType(type) {
                 this.selectedFilterType = type;
-                this.updateButtonSelection('#filterTypes', 'data-type', type);
+                this.uiManager.updateButtonSelection('#filterTypes', 'data-type', type);
 
                 if (type === 'Notch' || type === 'Bandpass') {
-                    document.getElementById('frequencySection').classList.remove('hidden');
+                    this.uiManager.show('frequencySection');
                     this.selectedFrequency = null;
-                    this.clearFrequencySelection();
+                    this.uiManager.clearButtonSelections('#frequencies');
                     document.getElementById('submitAnswer').disabled = true;
                 } else {
-                    document.getElementById('frequencySection').classList.add('hidden');
+                    this.uiManager.hide('frequencySection');
                     this.selectedFrequency = null;
-                    this.clearFrequencySelection();
+                    this.uiManager.clearButtonSelections('#frequencies');
                     document.getElementById('submitAnswer').disabled = false;
                 }
             }
 
             selectFrequency(freq) {
                 this.selectedFrequency = freq;
-                this.updateButtonSelection('#frequencies', 'data-freq', freq.toString());
+                this.uiManager.updateButtonSelection('#frequencies', 'data-freq', freq.toString());
                 document.getElementById('submitAnswer').disabled = false;
             }
 
-            updateButtonSelection(containerSelector, dataAttribute, value) {
-                document.querySelectorAll(`${containerSelector} .btn`).forEach(btn => {
-                    btn.classList.remove('selected');
-                    if (btn.getAttribute(dataAttribute) === value) {
-                        btn.classList.add('selected');
-                    }
-                });
-            }
-
-            clearFrequencySelection() {
-                document.querySelectorAll('#frequencies .btn').forEach(btn => {
-                    btn.classList.remove('selected');
-                });
-            }
-
             async submitAnswer() {
-                await this.stopCurrentAudio();
+                await this.audioPlayer.stopCurrentAudio();
 
                 const question = this.questions[this.currentQuestion];
                 const result = this.calculateScore(question);
@@ -1121,10 +1932,10 @@
                 this.score += result.score;
                 this.questionResults.push(result);
 
-                document.getElementById('currentScore').textContent = this.score.toFixed(1);
+                this.uiManager.setText('currentScore', this.score.toFixed(1));
                 this.showFeedback(result.feedbackText, result.feedbackClass);
                 this.hideQuestionControls();
-                document.getElementById('nextQuestion').classList.remove('hidden');
+                this.uiManager.show('nextQuestion');
                 document.getElementById('progressBar').style.width = `${((this.currentQuestion + 1) / this.NUM_QUESTIONS) * 100}%`;
             }
 
@@ -1205,17 +2016,17 @@
                 const feedback = document.getElementById('feedback');
                 feedback.innerHTML = text;
                 feedback.className = `feedback ${className}`;
-                feedback.classList.remove('hidden');
+                this.uiManager.show('feedback');
             }
 
             hideQuestionControls() {
-                document.getElementById('playSection').classList.add('hidden');
-                document.getElementById('guessSection').classList.add('hidden');
-                this.hideStatus('audioStatus');
+                this.uiManager.hide('playSection');
+                this.uiManager.hide('guessSection');
+                this.uiManager.hide('audioStatus');
             }
 
             async nextQuestion() {
-                await this.stopCurrentAudio();
+                await this.audioPlayer.stopCurrentAudio();
                 this.currentQuestion++;
 
                 if (this.currentQuestion < this.NUM_QUESTIONS) {
@@ -1226,23 +2037,22 @@
             }
 
             endQuiz() {
-                this.stopCurrentAudio();
-                document.getElementById('quiz').classList.add('hidden');
-                document.getElementById('results').classList.remove('hidden');
+                this.audioPlayer.stopCurrentAudio();
+                this.uiManager.hide('quiz');
+                this.uiManager.show('results');
                 
                 const percentage = (this.score / this.NUM_QUESTIONS) * 100;
-                document.getElementById('finalScore').innerHTML = `
-                    <div style="font-size: 2em; margin: 20px 0;">
-                        ${this.score.toFixed(1)}/${this.NUM_QUESTIONS} (${percentage.toFixed(1)}%)
-                    </div>
-                `;
+                this.uiManager.setHTML('finalScore', `
+                    <div class="score">${this.score.toFixed(1)}/${this.NUM_QUESTIONS}</div>
+                    <div>${percentage.toFixed(1)}% Accuracy</div>
+                `);
 
                 this.showPerformanceAnalysis();
             }
 
             showPerformanceAnalysis() {
                 const analysis = this.analyzePerformance();
-                document.getElementById('performanceAnalysis').innerHTML = analysis;
+                this.uiManager.setHTML('performanceAnalysis', analysis);
             }
 
             analyzePerformance() {
@@ -1253,7 +2063,7 @@
                 this.NOTCH_BAND_FREQ_LIST.forEach(freq => freqAccuracy[freq] = {correct: 0, total: 0});
 
                 this.questionResults.forEach(result => {
-                    const {question, submittedType, submittedFreq, score} = result;
+                    const {question, submittedType, submittedFreq} = result;
                     
                     typeAccuracy[question.filterType].total++;
                     if (submittedType === question.filterType) {
@@ -1268,24 +2078,24 @@
                     }
                 });
 
-                let analysis = '<div style="text-align: left; margin-top: 20px;"><h3>📊 Performance Analysis</h3>';
+                let analysis = '<div class="card"><h3>📊 Performance Analysis</h3>';
                 
-                analysis += '<h4>Filter Type Accuracy:</h4><ul>';
+                analysis += '<h4>Filter Type Accuracy</h4><ul style="margin-left: var(--space-5);">';
                 Object.entries(typeAccuracy).forEach(([type, data]) => {
                     if (data.total > 0) {
                         const percent = ((data.correct / data.total) * 100).toFixed(0);
-                        analysis += `<li>${type}: ${data.correct}/${data.total} (${percent}%)</li>`;
+                        analysis += `<li><strong>${type}:</strong> ${data.correct}/${data.total} (${percent}%)</li>`;
                     }
                 });
                 analysis += '</ul>';
 
                 const freqData = Object.entries(freqAccuracy).filter(([_, data]) => data.total > 0);
                 if (freqData.length > 0) {
-                    analysis += '<h4>Frequency Accuracy:</h4><ul>';
+                    analysis += '<h4>Frequency Accuracy</h4><ul style="margin-left: var(--space-5);">';
                     freqData.forEach(([freq, data]) => {
                         const percent = ((data.correct / data.total) * 100).toFixed(0);
                         const label = this.NOTCH_BAND_CHOICES[freq];
-                        analysis += `<li>${freq} Hz (${label}): ${data.correct}/${data.total} (${percent}%)</li>`;
+                        analysis += `<li><strong>${freq} Hz (${label}):</strong> ${data.correct}/${data.total} (${percent}%)</li>`;
                     });
                     analysis += '</ul>';
                 }
@@ -1304,104 +2114,99 @@
                 this.exampleSelectedFrequency = null;
                 this.exampleOriginalAudioData = null;
 
-                this.updateButtonSelection('#exampleFilterTypes', 'data-type', type);
-                document.querySelectorAll('#exampleFrequencies .btn').forEach(btn => btn.classList.remove('selected'));
+                this.uiManager.updateButtonSelection('#exampleFilterTypes', 'data-type', type);
+                this.uiManager.clearButtonSelections('#exampleFrequencies');
 
                 if (type === 'Notch' || type === 'Bandpass') {
-                    document.getElementById('exampleFrequencySection').classList.remove('hidden');
+                    this.uiManager.show('exampleFrequencySection');
                     this.updateExamplePlayButtonState();
                 } else {
-                    document.getElementById('exampleFrequencySection').classList.add('hidden');
+                    this.uiManager.hide('exampleFrequencySection');
                     this.prepareExampleAudio();
                     this.updateExamplePlayButtonState();
                 }
-                this.hideStatus('exampleStatus');
+                this.uiManager.hide('exampleStatus');
             }
 
             selectExampleFrequency(freq) {
                 this.exampleSelectedFrequency = freq;
                 this.exampleOriginalAudioData = null;
 
-                this.updateButtonSelection('#exampleFrequencies', 'data-freq', freq.toString());
+                this.uiManager.updateButtonSelection('#exampleFrequencies', 'data-freq', freq.toString());
                 this.prepareExampleAudio();
                 this.updateExamplePlayButtonState();
-                this.hideStatus('exampleStatus');
+                this.uiManager.hide('exampleStatus');
             }
 
             prepareExampleAudio() {
                 const duration = this.userDuration;
-                const requiredSamples = Math.floor(duration * this.FS);
-                const isFileSource = document.querySelector('input[name="audioSource"]:checked').value === 'file';
+                const audioSourceValue = document.querySelector('input[name="audioSource"]:checked').value;
 
                 let canGenerate = false;
-                if (!isFileSource) {
+                if (audioSourceValue === 'pink') {
                     canGenerate = true;
-                } else if (this.customAudioBuffer && this.customAudioBuffer.length >= requiredSamples) {
+                } else if (audioSourceValue === 'random' && this.fileManager.customAudioBuffer) {
+                    const requiredSamples = Math.floor(duration * this.audioProcessor.FS);
+                    canGenerate = this.fileManager.customAudioBuffer.length >= requiredSamples;
+                } else if (audioSourceValue === 'file' && this.fileManager.selectedAudioSegment && this.fileManager.selectedAudioSegment.length > 0) {
                     canGenerate = true;
                 }
 
                 if (canGenerate) {
                     this.exampleOriginalAudioData = this.getExampleOriginalAudioData(duration);
-                    if (!this.exampleOriginalAudioData) {
-                        console.warn("Failed to prepare example original audio data.");
-                    }
                 } else {
                     this.exampleOriginalAudioData = null;
                 }
             }
 
             getExampleOriginalAudioData(duration) {
-                const numSamples = Math.floor(duration * this.FS);
-                const isFileSource = document.querySelector('input[name="audioSource"]:checked').value === 'file';
+                const numSamples = Math.floor(duration * this.audioProcessor.FS);
+                const audioSourceValue = document.querySelector('input[name="audioSource"]:checked').value;
 
-                if (isFileSource && this.customAudioBuffer) {
-                    if (this.customAudioBuffer.length < numSamples) {
-                        this.showStatus('exampleStatus', `Uploaded file is too short for ${duration}s duration.`, 'error');
+                if (audioSourceValue === 'file' && this.fileManager.selectedAudioSegment) {
+                    if (this.fileManager.selectedAudioSegment.length >= numSamples) {
+                        return this.fileManager.selectedAudioSegment.slice(0, numSamples);
+                    } else {
+                        const paddedData = new Float32Array(numSamples);
+                        let sourceIndex = 0;
+                        for (let i = 0; i < numSamples; i++) {
+                            paddedData[i] = this.fileManager.selectedAudioSegment[sourceIndex % this.fileManager.selectedAudioSegment.length];
+                            sourceIndex++;
+                        }
+                        return paddedData;
+                    }
+                } else if (audioSourceValue === 'random' && this.fileManager.customAudioBuffer) {
+                    if (this.fileManager.customAudioBuffer.length < numSamples) {
+                        this.uiManager.showStatus('exampleStatus', `Uploaded file is too short for ${duration}s duration.`, 'error');
                         return null;
                     }
-                    const maxStartSample = Math.max(0, this.customAudioBuffer.length - numSamples);
-                    const startSample = Math.floor(Math.random() * (maxStartSample + 1));
-                    const endSample = Math.min(startSample + numSamples, this.customAudioBuffer.length);
-
-                    let originalData = this.customAudioBuffer.getChannelData(0).slice(startSample, endSample);
-
-                    if (originalData.length < numSamples) {
-                        const paddedData = new Float32Array(numSamples);
-                        paddedData.set(originalData);
-                        originalData = paddedData;
-                    }
-                    return originalData;
-                } else if (!isFileSource) {
-                    return this.generatePinkNoise(duration, this.FS);
+                    return this.fileManager.getRandomSegment(duration);
+                } else if (audioSourceValue === 'pink') {
+                    return this.audioProcessor.generatePinkNoise(duration);
                 } else {
-                    this.showStatus('exampleStatus', 'Please upload an audio file first.', 'error');
+                    if (audioSourceValue === 'file') {
+                        this.uiManager.showStatus('exampleStatus', 'Please upload and select an audio segment first.', 'error');
+                    } else if (audioSourceValue === 'random') {
+                        this.uiManager.showStatus('exampleStatus', 'Please upload an audio file first.', 'error');
+                    }
                     return null;
                 }
             }
 
             async playExampleOriginal() {
                 if (!this.exampleOriginalAudioData) {
-                    this.showStatus('exampleStatus', 'Audio source data not ready.', 'error');
+                    this.uiManager.showStatus('exampleStatus', 'Audio source data not ready.', 'error');
                     return;
                 }
 
-                const duration = this.userDuration;
-                const numSamples = Math.floor(duration * this.FS);
-
-                await this.initAudioContext();
-                const tempBuffer = this.audioContext.createBuffer(1, numSamples, this.FS);
-                tempBuffer.getChannelData(0).set(this.exampleOriginalAudioData.slice(0, numSamples));
-
-                this.showStatus('exampleStatus', 'Playing original...', 'info');
+                this.uiManager.showStatus('exampleStatus', 'Playing original...', 'info');
 
                 try {
-                    await this.playAudioBuffer(tempBuffer);
-                    this.showStatus('exampleStatus', 'Done.', 'success', 1000);
+                    await this.audioPlayer.playAudioData(this.exampleOriginalAudioData);
+                    this.uiManager.showStatus('exampleStatus', 'Done.', 'success', 1000);
                 } catch (e) {
                     console.error("Error playing example original:", e);
-                    this.showStatus('exampleStatus', 'Error playing original audio.', 'error');
-                } finally {
-                    this.updateExamplePlayButtonState();
+                    this.uiManager.showStatus('exampleStatus', 'Error playing original audio.', 'error');
                 }
             }
 
@@ -1411,33 +2216,33 @@
                 const duration = this.userDuration;
 
                 if (!type) {
-                    this.showStatus('exampleStatus', 'Please select a filter type.', 'error');
+                    this.uiManager.showStatus('exampleStatus', 'Please select a filter type.', 'error');
                     return;
                 }
                 if ((type === 'Notch' || type === 'Bandpass') && freq === null) {
-                    this.showStatus('exampleStatus', 'Please select a center frequency.', 'error');
+                    this.uiManager.showStatus('exampleStatus', 'Please select a center frequency.', 'error');
                     return;
                 }
                 if (!this.exampleOriginalAudioData) {
-                    this.showStatus('exampleStatus', 'Audio source data not ready.', 'error');
+                    this.uiManager.showStatus('exampleStatus', 'Audio source data not ready.', 'error');
                     return;
                 }
 
                 document.getElementById('playExampleFiltered').disabled = true;
-                this.showStatus('exampleStatus', '<div class="loading-spinner"></div>Generating filtered audio...', 'info');
+                this.uiManager.showStatus('exampleStatus', '<div class="loading-spinner"></div>Generating filtered audio...', 'info');
 
                 try {
                     const filterFreq = freq || (type === 'Lowpass' ? this.LOWPASS_FREQ : this.HIGHPASS_FREQ);
-                    const filteredAudioBuffer = await this.applyFilter(this.exampleOriginalAudioData, type, filterFreq, duration);
+                    const filteredAudioBuffer = await this.audioProcessor.applyFilter(this.exampleOriginalAudioData, type, filterFreq, duration);
 
-                    this.showStatus('exampleStatus', 'Playing filtered...', 'info');
-                    await this.playAudioBuffer(filteredAudioBuffer);
-                    this.showStatus('exampleStatus', 'Done.', 'success', 1000);
+                    this.uiManager.showStatus('exampleStatus', 'Playing filtered...', 'info');
+                    await this.audioPlayer.playAudioBuffer(filteredAudioBuffer);
+                    this.uiManager.showStatus('exampleStatus', 'Done.', 'success', 1000);
                 } catch (e) {
                     console.error("Error playing example filtered:", e);
-                    this.showStatus('exampleStatus', 'Error playing filtered audio.', 'error');
+                    this.uiManager.showStatus('exampleStatus', 'Error playing filtered audio.', 'error');
                 } finally {
-                    this.updateExamplePlayButtonState();
+                    document.getElementById('playExampleFiltered').disabled = false;
                 }
             }
 
@@ -1463,173 +2268,37 @@
                 playFilteredButton.disabled = !canPlayFiltered;
                 playOriginalButton.disabled = !canPlayOriginal;
 
-                const isFileSource = document.querySelector('input[name="audioSource"]:checked').value === 'file';
-                document.getElementById('exampleAudioSource').textContent = isFileSource ? 
-                    (this.customAudioBuffer ? 'Uploaded File' : 'Uploaded File (Not loaded)') : 'Pink Noise';
-                document.getElementById('exampleDuration').textContent = this.userDuration;
-            }
-
-            // Event handlers
-            onDurationChange() {
-                const selectedDuration = parseFloat(document.getElementById('sampleDuration').value);
-                this.userDuration = selectedDuration;
-                document.getElementById('requiredDuration').textContent = selectedDuration;
-                document.getElementById('exampleDuration').textContent = selectedDuration;
-
-                if (document.querySelector('input[name="audioSource"]:checked').value === 'file') {
-                    const fileInput = document.getElementById('audioFile');
-                    if (fileInput.files && fileInput.files.length > 0) {
-                        this.handleAudioFile();
+                // Update audio source display
+                const audioSourceValue = document.querySelector('input[name="audioSource"]:checked').value;
+                if (audioSourceValue === 'file') {
+                    if (this.fileManager.selectedAudioSegment) {
+                        this.uiManager.setText('exampleAudioSource', 'Selected Segment');
+                        this.uiManager.setText('exampleSourceNote', 'Using your selected audio segment');
                     } else {
-                        const requiredSamples = Math.floor(selectedDuration * this.FS);
-                        document.getElementById('startButton').disabled = (!this.customAudioBuffer || this.customAudioBuffer.length < requiredSamples);
-                        this.prepareExampleAudio();
-                        this.updateExamplePlayButtonState();
+                        this.uiManager.setText('exampleAudioSource', 'Uploaded File (No segment selected)');
+                        this.uiManager.setText('exampleSourceNote', 'Please select a segment first');
+                    }
+                } else if (audioSourceValue === 'random') {
+                    if (this.fileManager.customAudioBuffer) {
+                        this.uiManager.setText('exampleAudioSource', 'Random Segment');
+                        this.uiManager.setText('exampleSourceNote', 'Using random segments from uploaded file');
+                    } else {
+                        this.uiManager.setText('exampleAudioSource', 'Random Segment (No file uploaded)');
+                        this.uiManager.setText('exampleSourceNote', 'Please upload a file first');
                     }
                 } else {
-                    document.getElementById('startButton').disabled = false;
-                    this.prepareExampleAudio();
-                    this.updateExamplePlayButtonState();
+                    this.uiManager.setText('exampleAudioSource', 'Pink Noise');
+                    this.uiManager.setText('exampleSourceNote', 'Using the audio sample duration setting');
                 }
-            }
-
-            onAudioSourceChange() {
-                this.useCustomAudio = document.querySelector('input[name="audioSource"]:checked').value === 'file';
-                const selectedDuration = parseFloat(document.getElementById('sampleDuration').value);
-                const requiredSamples = Math.floor(selectedDuration * this.FS);
-
-                if (this.useCustomAudio) {
-                    document.getElementById('fileSection').classList.remove('hidden');
-                    document.getElementById('startButton').disabled = !this.customAudioBuffer || this.customAudioBuffer.length < requiredSamples;
-                } else {
-                    document.getElementById('fileSection').classList.add('hidden');
-                    this.hideStatus('fileStatus');
-                    document.getElementById('startButton').disabled = false;
-                }
-
-                this.prepareExampleAudio();
-                this.updateExamplePlayButtonState();
-                const isFileSource = this.useCustomAudio;
-                document.getElementById('exampleAudioSource').textContent = isFileSource ? 
-                    (this.customAudioBuffer ? 'Uploaded File' : 'Uploaded File (Not loaded)') : 'Pink Noise';
-            }
-
-            onFilterModeChange() {
-                this.useFixedFilter = document.querySelector('input[name="filterMode"]:checked').value === 'fixed';
-                if (this.useFixedFilter) {
-                    document.getElementById('fixedFilterSection').classList.remove('hidden');
-                    this.fixedFilterType = document.getElementById('fixedFilterType').value;
-                    document.getElementById('filterTypeDisplay').textContent = this.fixedFilterType;
-                } else {
-                    document.getElementById('fixedFilterSection').classList.add('hidden');
-                    this.fixedFilterType = null;
-                }
-            }
-
-            onFixedFilterTypeChange() {
-                this.fixedFilterType = document.getElementById('fixedFilterType').value;
-                document.getElementById('filterTypeDisplay').textContent = this.fixedFilterType;
-            }
-
-            async handleAudioFile() {
-                const fileInput = document.getElementById('audioFile');
-                const file = fileInput.files[0];
-                const startButton = document.getElementById('startButton');
-
-                const selectedDuration = parseFloat(document.getElementById('sampleDuration').value);
-                const requiredSamples = Math.floor(selectedDuration * this.FS);
-
-                this.hideStatus('fileStatus');
-                this.customAudioBuffer = null;
-                startButton.disabled = true;
-
-                this.exampleOriginalAudioData = null;
-                this.updateExamplePlayButtonState();
-                document.getElementById('exampleAudioSource').textContent = 'Uploaded File (Loading...)';
-                this.showStatus('exampleStatus', '<div class="loading-spinner"></div>Decoding...', 'info');
-
-                if (!file) {
-                    this.updateExamplePlayButtonState();
-                    document.getElementById('exampleAudioSource').textContent = 'Uploaded File (No file)';
-                    this.hideStatus('exampleStatus');
-                    return;
-                }
-
-                await this.initAudioContext();
-
-                const reader = new FileReader();
-                reader.onload = async (e) => {
-                    try {
-                        const originalBuffer = await this.audioContext.decodeAudioData(e.target.result);
-                        const numberOfChannels = originalBuffer.numberOfChannels;
-                        const durationInSeconds = originalBuffer.duration;
-                        const resampledLength = Math.floor(durationInSeconds * this.FS);
-
-                        const offlineContext = new OfflineAudioContext(numberOfChannels, resampledLength, this.FS);
-                        const source = offlineContext.createBufferSource();
-                        source.buffer = originalBuffer;
-                        source.connect(offlineContext.destination);
-                        source.start();
-
-                        this.showStatus('exampleStatus', '<div class="loading-spinner"></div>Resampling...', 'info');
-                        const resampledBuffer = await offlineContext.startRendering();
-
-                        if (resampledBuffer.numberOfChannels > 1) {
-                            const monoBuffer = this.audioContext.createBuffer(1, resampledBuffer.length, this.FS);
-                            monoBuffer.getChannelData(0).set(resampledBuffer.getChannelData(0));
-                            this.customAudioBuffer = monoBuffer;
-                        } else {
-                            this.customAudioBuffer = resampledBuffer;
-                        }
-
-                        if (this.customAudioBuffer.length < requiredSamples) {
-                            this.showStatus('fileStatus', 
-                                `File is too short for ${selectedDuration} seconds after resampling (${(this.customAudioBuffer.duration).toFixed(2)}s @ ${this.FS} Hz). Please select a longer file.`, 
-                                'error'
-                            );
-                            startButton.disabled = true;
-                            this.customAudioBuffer = null;
-                        } else {
-                            this.showStatus('fileStatus', 
-                                `✅ File loaded successfully! Duration: ${(this.customAudioBuffer.duration).toFixed(2)}s (Original: ${originalBuffer.sampleRate} Hz)`, 
-                                'success'
-                            );
-                            startButton.disabled = false;
-                        }
-
-                        this.prepareExampleAudio();
-                        this.updateExamplePlayButtonState();
-                        this.hideStatus('exampleStatus');
-                    } catch (error) {
-                        console.error("Error processing audio file:", error);
-                        this.showStatus('fileStatus', `Error processing audio file: ${error.message}`, 'error');
-                        startButton.disabled = true;
-                        this.customAudioBuffer = null;
-                        this.prepareExampleAudio();
-                        this.updateExamplePlayButtonState();
-                        this.hideStatus('exampleStatus');
-                    }
-                };
-
-                reader.onerror = (e) => {
-                    console.error("Error reading audio file:", e);
-                    this.showStatus('fileStatus', "Error reading audio file.", 'error');
-                    startButton.disabled = true;
-                    this.customAudioBuffer = null;
-                    this.prepareExampleAudio();
-                    this.updateExamplePlayButtonState();
-                    this.hideStatus('exampleStatus');
-                };
-
-                reader.readAsArrayBuffer(file);
+                
+                this.uiManager.setText('exampleDuration', this.userDuration);
             }
 
             updateUI() {
-                document.getElementById('requiredDuration').textContent = this.userDuration;
-                document.getElementById('exampleDuration').textContent = this.userDuration;
+                this.uiManager.setText('exampleDuration', this.userDuration);
                 this.onAudioSourceChange();
                 this.onFilterModeChange();
-                document.getElementById('filterTypeDisplay').textContent = document.getElementById('fixedFilterType').value;
+                this.uiManager.setText('filterTypeDisplay', document.getElementById('fixedFilterType').value);
                 this.selectExampleFilterType(null);
                 this.prepareExampleAudio();
                 this.updateExamplePlayButtonState();

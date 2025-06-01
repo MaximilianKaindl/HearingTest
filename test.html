@@ -1339,14 +1339,17 @@
                 this.selectedFilterType = null;
                 this.selectedFrequency = null;
                 
-                // Settings
-                this.showTypeAnswers = false;
-                this.showDetails = false;
-                this.useCustomAudio = false;
-                this.useRandomSegments = false;
-                this.useFixedFilter = false;
-                this.fixedFilterType = 'Notch';
-                this.userDuration = 3.0;
+                // Settings - these will be preserved across quiz restarts
+                this.settings = {
+                    showTypeAnswers: false,
+                    showDetails: false,
+                    useCustomAudio: false,
+                    useRandomSegments: false,
+                    useFixedFilter: false,
+                    fixedFilterType: 'Notch',
+                    userDuration: 3.0,
+                    audioSourceValue: 'pink'
+                };
                 
                 // Example player state
                 this.exampleSelectedFilterType = null;
@@ -1374,6 +1377,51 @@
                 this.updateUI();
                 this.setupFileUpload();
                 this.setupSegmentSelector();
+            }
+
+            // Method to save current settings
+            saveCurrentSettings() {
+                this.settings.showTypeAnswers = document.getElementById('showTypeAnswers').checked;
+                this.settings.showDetails = document.getElementById('showDetails').checked;
+                this.settings.useCustomAudio = this.useCustomAudio;
+                this.settings.useRandomSegments = this.useRandomSegments;
+                this.settings.useFixedFilter = this.useFixedFilter;
+                this.settings.fixedFilterType = this.fixedFilterType;
+                this.settings.userDuration = this.userDuration;
+                this.settings.audioSourceValue = document.querySelector('input[name="audioSource"]:checked').value;
+            }
+
+            // Method to restore saved settings
+            restoreSettings() {
+                // Restore checkboxes
+                document.getElementById('showTypeAnswers').checked = this.settings.showTypeAnswers;
+                document.getElementById('showDetails').checked = this.settings.showDetails;
+                
+                // Restore audio source radio button
+                document.querySelector(`input[name="audioSource"][value="${this.settings.audioSourceValue}"]`).checked = true;
+                
+                // Restore sample duration
+                document.getElementById('sampleDuration').value = this.settings.userDuration.toString();
+                
+                // Restore filter mode
+                document.querySelector(`input[name="filterMode"][value="${this.settings.useFixedFilter ? 'fixed' : 'random'}"]`).checked = true;
+                
+                // Restore fixed filter type
+                document.getElementById('fixedFilterType').value = this.settings.fixedFilterType;
+                
+                // Apply the settings
+                this.showTypeAnswers = this.settings.showTypeAnswers;
+                this.showDetails = this.settings.showDetails;
+                this.useCustomAudio = this.settings.useCustomAudio;
+                this.useRandomSegments = this.settings.useRandomSegments;
+                this.useFixedFilter = this.settings.useFixedFilter;
+                this.fixedFilterType = this.settings.fixedFilterType;
+                this.userDuration = this.settings.userDuration;
+                
+                // Update UI based on restored settings
+                this.onAudioSourceChange();
+                this.onFilterModeChange();
+                this.onDurationChange();
             }
 
             setupEventListeners() {
@@ -1764,6 +1812,9 @@
             async startQuiz() {
                 await this.audioPlayer.stopCurrentAudio();
 
+                // Save current settings before starting
+                this.saveCurrentSettings();
+
                 this.userDuration = parseFloat(document.getElementById('sampleDuration').value);
                 this.showTypeAnswers = document.getElementById('showTypeAnswers').checked;
                 this.showDetails = document.getElementById('showDetails').checked;
@@ -2105,7 +2156,59 @@
             }
 
             restartQuiz() {
-                window.location.reload();
+                // Stop any playing audio
+                this.audioPlayer.stopCurrentAudio();
+                
+                // Reset quiz state but keep file and settings
+                this.currentQuestion = 0;
+                this.score = 0;
+                this.questions = [];
+                this.questionResults = [];
+                this.selectedFilterType = null;
+                this.selectedFrequency = null;
+                
+                // Reset example player state
+                this.exampleSelectedFilterType = null;
+                this.exampleSelectedFrequency = null;
+                this.exampleOriginalAudioData = null;
+                
+                // Hide results and quiz sections
+                this.uiManager.hide('results');
+                this.uiManager.hide('quiz');
+                
+                // Show setup section
+                this.uiManager.show('setup');
+                
+                // Restore the saved settings instead of reloading
+                this.restoreSettings();
+                
+                // Update UI based on restored settings
+                this.updateUI();
+                this.prepareExampleAudio();
+                this.updateExamplePlayButtonState();
+                
+                // Reset progress bar
+                document.getElementById('progressBar').style.width = '0%';
+                
+                // Clear any status messages
+                this.uiManager.hide('audioStatus');
+                this.uiManager.hide('exampleStatus');
+                
+                // Reset button selections in examples
+                this.uiManager.clearButtonSelections('#exampleFilterTypes');
+                this.uiManager.clearButtonSelections('#exampleFrequencies');
+                this.uiManager.hide('exampleFrequencySection');
+                
+                // Update start button state based on current settings
+                if (this.useCustomAudio) {
+                    if (this.useRandomSegments) {
+                        document.getElementById('startButton').disabled = !this.fileManager.customAudioBuffer;
+                    } else {
+                        document.getElementById('startButton').disabled = !this.fileManager.selectedAudioSegment;
+                    }
+                } else {
+                    document.getElementById('startButton').disabled = false;
+                }
             }
 
             // Example player methods
